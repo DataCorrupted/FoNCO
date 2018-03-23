@@ -13,7 +13,7 @@ def transform(path):
 		prob = f[:-4]
 		if not os.path.exists(prob):
 			os.mkdir(prob)
-		shutil.copyfile(f, prob+"/"+f)
+		shutil.move(f, prob+"/"+f)
 		os.chdir(prob)
 		os.system("sifdecoder " + f)
 		os.chdir("..")
