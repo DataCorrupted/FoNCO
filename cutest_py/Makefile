@@ -1,4 +1,3 @@
-
 FORTRAN = /usr/bin/gfortran
 BASIC = -fno-second-underscore -shared 
 CCBASIC   = -c -ansi -pedantic -fPIC
@@ -7,7 +6,7 @@ LIBDIR = -L./
 LIBFLAG = -lcutest -lgfortran
 INDIR = -I./
 OBJ = py_cute
-PROBFLAG = -I./modules/pc64.lnx.gf5/double -J./modules/pc64.lnx.gf5/double -c -fno-second-underscore -O -ffixed-form -fPIC
+PROBFLAG = -I./modules/${MYARCH}/double -J./modules/${MYARCH}/double -c -fno-second-underscore -O -ffixed-form -fPIC
 
 all: ${OBJDIR}/$(OBJ).so clean
 
