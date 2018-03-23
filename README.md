@@ -26,7 +26,7 @@ To compile run:
 
 	./make_all ../sif
 
-Currently it will only compile on 64bit linux. I will try to make it more generic in the future. 
+Currently it will only compile on 64bit linux machine. I will try to make it more generic in the future. 
 
 It will compile the interface along with the .f file in each and every problem in the sif folder. It will dump the dynamic linked library in each problems folder generated in last step.
 

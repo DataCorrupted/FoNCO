@@ -1,4 +1,5 @@
 cutest_py/libcutest.a
 cutest_py/modules
-problem_set/*
-!problem_set/decode.py
+sif/*
+!sif/decode.py
+!sif/README.md
