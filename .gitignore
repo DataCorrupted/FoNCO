@@ -1,2 +1,4 @@
 cutest_py/libcutest.a
 cutest_py/modules
+problem_set/*
+!problem_set/decode.py
