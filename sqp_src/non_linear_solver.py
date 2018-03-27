@@ -204,6 +204,125 @@ def get_f_g_A_b_violation(x_k, cuter, dust_param):
 
     return f, g, b, A, violation
 
+def non_linear_solve_trust_region(cuter, dust_param, logger):
+    """
+    Non linear solver for cuter problems
+    :param cuter instance
+    :param dust_param: dust parameter class instance
+    :param logger: logger instance to store log information
+    :return:
+        status:
+                -1 - max iteration reached
+                1 - solve the problem to optimality
+    """
+    setup_args_dict = cuter.setup_args_dict
+    x_0 = setup_args_dict['x']
+    num_var = setup_args_dict['n'][0]
+    beta_l = 0.6 * dust_param.beta_opt * (1 - dust_param.beta_fea)
+    adjusted_equatn = cuter.setup_args_dict['adjusted_equatn']
+    zero_d = np.zeros(x_0.shape)
+
+    i, status = 0, -1
+    x_k = x_0.copy()
+
+    logger.info('-' * 200)
+    logger.info(
+        '''{0:4s} | {1:13s} | {2:12s} | {3:12s} | {4:12s} | {5:12s} | {6:12s} | {7:12s} | {8:12s} | {9:12s} | {10:6s} | {11:12s} | {12:12s} | {13:12s}'''.format(
+            'Itr', 'KKT', 'Step_size', 'Violation', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'Omega',
+            'SubItr', 'Delta_L', 'Merit', "||d||"))
+
+    f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
+    rho = dust_param.init_rho
+    omega = dust_param.init_omega
+    max_iter = dust_param.max_iter
+    rescale = dust_param.rescale
+
+    # Initialize dual variables
+    dual_var = initialize_dual_var(adjusted_equatn, b)
+    lam = initialize_dual_var(adjusted_equatn, b)
+    kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+
+    all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
+        [dust_param.init_rho], [kkt_error_k], [violation], [f], []
+
+    fn_eval_cnt = 0
+
+    logger.info(
+        '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
+            .format(i, kkt_error_k, -1, violation, rho, f, -1, -1, -1, omega, -1, -1, rho * f + violation, -1))
+
+    step_size = -1.0
+    H_rho = np.identity(num_var)
+
+    while i < max_iter:
+        # DUST / PSST / Subproblem here.
+        dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
+            get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
+        
+        # 2.3
+        l_0_rho_x_k = linear_model_penalty(A, b, g, rho, zero_d, adjusted_equatn)
+        l_d_rho_x_k = linear_model_penalty(A, b, g, rho, d_k, adjusted_equatn)
+        delta_linearized_model = l_0_rho_x_k - l_d_rho_x_k
+
+        # 2.2
+        l_0_0_x_k = linear_model_penalty(A, b, g, 0, zero_d, adjusted_equatn)
+        l_d_0_x_k = linear_model_penalty(A, b, g, 0, d_k, adjusted_equatn)
+        delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
+        
+        # Don't know what kke error is yet.
+        kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+
+        # ratio_opt: 3.6. It's actually r_v in paper.
+        if ratio_opt > 0:
+            step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
+                                          dust_param.rescale)
+            fn_eval_cnt += 1 - np.log2(step_size)
+        else:
+            fn_eval_cnt += 1
+
+        if step_size > STEP_SIZE_MIN and ratio_opt > 0:
+            x_k += step_size * d_k
+
+            if delta_linearized_model_0 > 0 and \
+                    delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
+                rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / \
+                      (g.T.dot(d_k) + 0.5 * d_k.T.dot(H_rho.dot(d_k)))[0, 0]
+
+            f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
+            omega *= dust_param.omega_shrink
+            kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+        else:
+            # If step size is too small, shrink rho and move forward
+            rho *= 0.5
+            omega *= dust_param.omega_shrink
+
+        # Store iteration information
+        all_rhos.append(rho)
+        all_violations.append(violation)
+        all_fs.append(f)
+        all_kkt_erros.append(kkt_error_k)
+        all_sub_iter.append(sub_iter)
+
+        logger.info(
+            '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
+                .format(i, kkt_error_k, step_size, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, omega,
+                        sub_iter, delta_linearized_model, rho * f + violation, np.linalg.norm(d_k, 2)))
+
+        if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
+            status = 1
+            break
+        i += 1
+
+    logger.info('-' * 200)
+
+    if rescale:
+        f = f / setup_args_dict['obj_scale']
+
+    return {'x': x_k, 'dual_var': dual_var, 'rho': rho, 'status': status, 'obj_f': f, 'x0': setup_args_dict['x'],
+            'kkt_error': kkt_error_k, 'iter_num': i, 'constraint_violation': violation, 'rhos': all_rhos,
+            'violations': all_violations, 'fs': all_fs, 'subiters': all_sub_iter, 'kkt_erros': all_kkt_erros,
+            'fn_eval_cnt': fn_eval_cnt, 'num_var': H_rho.shape[0], 'num_constr': dual_var.shape[0]}
+
 
 def non_linear_solve(cuter, dust_param, logger):
     """
@@ -256,16 +375,24 @@ def non_linear_solve(cuter, dust_param, logger):
     H_rho = np.identity(num_var)
 
     while i < max_iter:
+        # DUST / PSST / Subproblem here.
         dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
             get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
+        
+        # 2.3
         l_0_rho_x_k = linear_model_penalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linear_model_penalty(A, b, g, rho, d_k, adjusted_equatn)
         delta_linearized_model = l_0_rho_x_k - l_d_rho_x_k
+
+        # 2.2
         l_0_0_x_k = linear_model_penalty(A, b, g, 0, zero_d, adjusted_equatn)
         l_d_0_x_k = linear_model_penalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
+        
+        # Don't know what kke error is yet.
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
+        # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)

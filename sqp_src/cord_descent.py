@@ -204,6 +204,7 @@ def cord_descent(raw_H_0, raw_H_f, rho, g, A, b, equatn, omega, beta_fea, beta_o
         print '''{0:3s} | {1:12s} | {2:12s} | {3:12s} | {4:12s} | {5:12s} | {6:12s} | {7:12s} | {8:12s} '''.format(
             'Itr', 'Primal_Opt', 'Dual_Opt', 'Primal_Fea', 'Dual_Fea', 'Ratio_Fea', 'Ratio_Opt', 'Ratio_C', 'Rho')
 
+    # Here we solve a subproblem
     while iter_num < max_iter:
         np.random.shuffle(cord_inds)
 
