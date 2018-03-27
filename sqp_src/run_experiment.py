@@ -8,7 +8,7 @@ import pickle
 import time
 
 from cuter_util import Cuter
-from non_linear_solver import non_linear_solve, DustParam
+from non_linear_solver import non_linear_solve, DustParam, non_linear_solve_trust_region
 
 
 def get_logger(log_dir, log_file, logLevel=logging.DEBUG):
@@ -114,7 +114,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                                'Eps opt': dust_param.eps_opt}
             print_param_dict(init_param_dict, logger)
             start_time = time.time()
-            dust_output = non_linear_solve(cuter, dust_param, logger)
+            dust_output = non_linear_solve_trust_region(cuter, dust_param, logger)
             execution_time = time.time() - start_time
             dust_output['problem_name'] = problem_name
             dust_output['execution_time'] = execution_time
