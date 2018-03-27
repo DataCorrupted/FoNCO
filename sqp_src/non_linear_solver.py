@@ -230,6 +230,8 @@ def get_f_g_A_b_violation_trust_region(x_k, cuter, dust_param, delta):
     #equatn = np.concatenate((equatn, np.bool_(np.zeros((2*n, 1)))), axis = 0)
 
     #equatn = np.squeeze(equatn)
+    #print b
+    #print equatn.reshape((equatn.shape[0], -1))
 
     violation = v_x(b, equatn)
     return f, g, b, A, violation
@@ -297,7 +299,6 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         # DUST / PSST / Subproblem here.
         dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
             get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
-        print d_k        
         # 2.3
         l_0_rho_x_k = linear_model_penalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linear_model_penalty(A, b, g, rho, d_k, adjusted_equatn)
