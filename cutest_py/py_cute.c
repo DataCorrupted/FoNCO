@@ -108,3 +108,23 @@ void CUTEST_cterminate_1( integer *status )
 	CUTEST_cterminate(status);
 	return;
 }
+
+
+void CUTEST_ccfg_1( integer *status, integer *n, integer *m, doublereal *x, 
+	    doublereal *c, logical *jtrans, integer *lcjac1, integer *lcjac2,
+	    doublereal *cjac, logical *grad ){
+	CUTEST_ccfg( status, n, m, x, c, jtrans, lcjac1, lcjac2, cjac, grad);
+	return;
+}
+
+void CUTEST_cidh_1( integer *status, integer *n, doublereal *x, integer *iprob, 
+            integer *lh1, doublereal *h ){
+	CUTEST_cidh(status, n, x, iprob, lh1, h);
+	return;
+}
+
+void CUTEST_cdh_1( integer *status, integer *n, integer *m, doublereal *x, 
+           doublereal *v, integer *lh1, doublereal *h ){
+	CUTEST_cdh(status, n, m, x, v, lh1, h);
+	return;
+}
