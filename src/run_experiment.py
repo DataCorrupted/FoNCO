@@ -99,6 +99,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
     :param result_dir: result directory to store the output
     :return: dust output
     """
+    global success_cnt
     logger = get_logger(log_dir, '{0}.log'.format(problem_name))
     logger.info('+' * 200)
     with Cuter(os.path.join(sif_dir_root, problem_name)) as cuter:
@@ -126,6 +127,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                  ('Number Fn', dust_output['fn_eval_cnt'])])
             print_param_dict(output_print_dict, logger)
             save_output(result_dir, dust_output)
+            success_cnt += (dust_output['status'] == 1)
         except Exception as e:
             logger.error(e)
             logger.error('End of problem: {0}'.format(problem_name))
@@ -159,6 +161,8 @@ def all_tests(sif_dir_root, log_dir, result_dir):
 
 
 if __name__ == '__main__':
+    global success_cnt;
+    success_cnt = 0;
     sif_dir_root = '/home/peter/Desktop/slp/sif'
     log_dir = './logs/logs_0'
     result_dir = './results/results_0'
@@ -166,3 +170,4 @@ if __name__ == '__main__':
     problem_name = 'HS89'
     dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
+    print success_cnt

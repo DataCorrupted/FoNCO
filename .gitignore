@@ -4,8 +4,10 @@ sif/*
 !sif/decode.py
 !sif/README.md
 *.pyc
-sqp_src/deprecated_rm/
-sqp_src/results/
-sqp_src/summary/
-sqp_src/logs/
+src/deprecated_rm/
+src/results/
+!src/results/README.md
+src/summary/
+src/logs/
+!src/logs/README.md
 sif_all/
