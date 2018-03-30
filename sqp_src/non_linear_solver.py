@@ -60,13 +60,6 @@ def get_phi(x, rho, cuter, rescale):
     c, _ = cuter.get_constr_f_g(x, grad_flag=False, rescale=rescale)
 
     return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
-
-def get_phi_trust_region(x, rho, cuter, rescale, delta):
-    f, _ = cuter.get_f_g(x, grad_flag=False, rescale=rescale)
-    c, _ = cuter.get_constr_f_g(x, grad_flag=False, rescale=rescale)
-    c = np.concatenate((c, (x-delta)*(x-delta>0), (delta+x)*(x+delta<0) ), axis = 0)
-    return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
-
 def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
     """
     Line search on merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
@@ -209,34 +202,6 @@ def get_f_g_A_b_violation(x_k, cuter, dust_param):
 
     return f, g, b, A, violation
 
-
-def get_f_g_A_b_violation_trust_region(x_k, cuter, dust_param, delta):
-    """
-    Calculate objective function, gradient, constraint function and constraint Jacobian
-    :param x_k: current iteration x
-    :param cuter instance
-    :param dust_param: dust param instance
-    :return:
-    """
-    f, g = cuter.get_f_g(x_k, grad_flag=True, rescale=dust_param.rescale)
-    b, A = cuter.get_constr_f_g(x_k, grad_flag=True, rescale=dust_param.rescale)
-    equatn = cuter.setup_args_dict['adjusted_equatn'] 
-    m, n = A.shape
-    I = np.identity(n)
-
-    A = np.concatenate((A, I, I), axis=0)
-    b = np.concatenate((b, (x_k-delta)*(x_k-delta>0), (delta+x_k)*(x_k+delta<0) ), axis = 0)
-    #equatn = equatn.reshape(equatn.shape[0], 1)
-    #equatn = np.concatenate((equatn, np.bool_(np.zeros((2*n, 1)))), axis = 0)
-
-    #equatn = np.squeeze(equatn)
-    #print b
-    #print equatn.reshape((equatn.shape[0], -1))
-
-    violation = v_x(b, equatn)
-    return f, g, b, A, violation
-
-
 def non_linear_solve_trust_region(cuter, dust_param, logger):
     """
     Non linear solver for cuter problems
@@ -248,13 +213,6 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
                 -1 - max iteration reached
                 1 - solve the problem to optimality
     """
-    equatn = cuter.setup_args_dict['adjusted_equatn']
-    n = cuter.setup_args_dict['n'][0]
-    equatn = equatn.reshape(equatn.shape[0], 1)
-    equatn = np.concatenate((equatn, np.bool_(np.zeros((2*n, 1)))), axis = 0)
-    equatn = np.squeeze(equatn)
-    cuter.setup_args_dict['adjusted_equatn'] = equatn
-
     setup_args_dict = cuter.setup_args_dict
     x_0 = setup_args_dict['x']
     num_var = setup_args_dict['n'][0]
@@ -264,20 +222,19 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
 
     i, status = 0, -1
     x_k = x_0.copy()
-    delta = 1;
-    f, g, b, A, violation = get_f_g_A_b_violation_trust_region(x_k, cuter, dust_param, delta)
 
     logger.info('-' * 200)
     logger.info(
         '''{0:4s} | {1:13s} | {2:12s} | {3:12s} | {4:12s} | {5:12s} | {6:12s} | {7:12s} | {8:12s} | {9:12s} | {10:6s} | {11:12s} | {12:12s} | {13:12s}'''.format(
-            'Itr', 'delta', 'Step_size', 'sigma', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'Omega',
+            'Itr', 'Delta', 'Step_size', 'Sigma', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'Omega',
             'SubItr', 'Delta_L', 'Merit', "||d||"))
 
-    step_size = 1
+    f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
     rho = dust_param.init_rho
     omega = dust_param.init_omega
     max_iter = dust_param.max_iter
     rescale = dust_param.rescale
+
     # Initialize dual variables
     dual_var = initialize_dual_var(adjusted_equatn, b)
     lam = initialize_dual_var(adjusted_equatn, b)
@@ -286,19 +243,24 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
         [dust_param.init_rho], [kkt_error_k], [violation], [f], []
 
-    # Don't know what does this do.
     fn_eval_cnt = 0
-    sigma = 1;
+
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
-            .format(i, sigma, -1, violation, rho, f, -1, -1, -1, omega, -1, -1, rho * f + violation, -1))
-    H_rho = np.identity(num_var)
+            .format(i, 0.75, -1, violation, rho, f, -1, -1, -1, omega, -1, -1, rho * f + violation, -1))
 
+    step_size = -1.0
+    H_rho = np.identity(num_var)
+    delta = 1; 
+    MAX_delta = 16;
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.
         dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
             get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
+        if (np.max(np.abs(d_k)) > delta):
+            step_size = ( delta / np.max(np.abs(d_k)) )
+            d_k *= step_size
         # 2.3
         l_0_rho_x_k = linear_model_penalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linear_model_penalty(A, b, g, rho, d_k, adjusted_equatn)
@@ -314,19 +276,19 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / delta_linearized_model
-            if sigma < SIGMA or np.isnan(sigma):
+            if np.isnan(sigma):
+                sigma = -0x80000000
+            if sigma < SIGMA:
                 delta *= 0.25
             elif sigma > DELTA:
-                delta = min(2*delta, DELTA)
+                delta = min(2*delta, MAX_delta)
             # else delta_k = delta_k+1, which does not change anything.                
             #fn_eval_cnt += 1 - np.log2(step_size)
         else:
             pass
             #fn_eval_cnt += 
-        if (np.max(np.abs(d_k)) > delta):
-            step_size = ( delta / np.max(np.abs(d_k)) )
 
-        if not np.isnan(sigma) and sigma > SIGMA and ratio_opt > 0:
+        if sigma > SIGMA and ratio_opt > 0:
             # Make sure that the inf norm of d_k is delta
             x_k += d_k
         if delta_linearized_model_0 > 0 and \
@@ -334,7 +296,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
             rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / \
                     (g.T.dot(d_k) + 0.5 * d_k.T.dot(H_rho.dot(d_k)))[0, 0]
 
-        f, g, b, A, violation = get_f_g_A_b_violation_trust_region(x_k, cuter, dust_param, delta)
+        f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
         omega *= dust_param.omega_shrink
 
@@ -486,4 +448,4 @@ def non_linear_solve(cuter, dust_param, logger):
 
 
 def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
-    return get_phi_trust_region(x0, rho, cuter, rescale, delta) - get_phi_trust_region(x1, rho, cuter, rescale, delta)
+    return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)

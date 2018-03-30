@@ -3,3 +3,9 @@ cutest_py/modules
 sif/*
 !sif/decode.py
 !sif/README.md
+*.pyc
+sqp_src/deprecated_rm/
+sqp_src/results/
+sqp_src/summary/
+sqp_src/logs/
+sif_all/
