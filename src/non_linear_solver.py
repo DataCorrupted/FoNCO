@@ -252,7 +252,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     step_size = -1.0
     H_rho = np.identity(num_var)
     delta = 1; 
-    MAX_delta = 16;
+    MAX_delta = 64;
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.

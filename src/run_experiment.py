@@ -148,7 +148,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     for problem_name in problem_list:
         if problem_name.startswith("HS") and problem_name not in skip_list:
             if problem_name == 'HS19':
-                dust_param = DustParam(max_sub_iter=2000)
+                dust_param = DustParam(max_sub_iter=10000)
                 nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
             elif problem_name == 'HS75':
                 # Problem HS75's Hessian's scale is on 1e-4, if add_on is on 1e-4, this changes the Hessian strucutre
@@ -165,9 +165,9 @@ if __name__ == '__main__':
     success_cnt = 0;
     sif_dir_root = '/home/peter/Desktop/slp/sif'
     log_dir = './logs/logs_0'
-    result_dir = './results/results_0'
+    result_dir = './results/results_64'
     # all_tests(sif_dir_root, log_dir, result_dir)
     problem_name = 'HS89'
-    dust_param = DustParam()
+    dust_param = DustParam(max_sub_iter=3000)
     all_tests(sif_dir_root, log_dir, result_dir)
     print success_cnt
