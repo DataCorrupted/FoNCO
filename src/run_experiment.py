@@ -156,7 +156,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
                 dust_param = DustParam(add_on_hess=1e-8)
                 nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
             else:
-                dust_param = DustParam()
+                dust_param = DustParam(max_sub_iter=3000)
                 nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
 
 
