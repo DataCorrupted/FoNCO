@@ -1,11 +1,28 @@
 import numpy as np
 
 # Simple function used to debug. 
-# Used to break
-def pause():
+# input:
+#		anything. It will print out anything you give.
+def pause(*args, **kwargs):
+	for item in args:
+		print(item)
+	for (key, item) in kwargs.items():
+		print(key + ":", item)
+	# Press Enter to continue.
 	a = input()
 
 class Simplex:
+
+	# Construct a new Simplex instance. 
+	# input: 
+	# 		c, A, b: the same as the standard simplex form. Using type ndarray.
+	# 		basis: ndarray with size (m,), the init solution. If not given, it
+	#			will be reset to np.arange(m-n, m), as the easiest solution 
+	# 			usally falls there.
+	def __init__(self, c, A, b, basis = None, iter_max = 100):
+		self.iter_max_ = iter_max
+		self.updateProblem(c, A, b, basis)
+
 	# Check if the input is legal. Don't worry about it if you
 	# are not familiar with numpy's API.
 	def inputCheck_(self, c, A, b, basis):
@@ -15,8 +32,8 @@ class Simplex:
 			type(b) != np.ndarray or \
 			type(basis) != np.ndarray:
 			raise ValueError("Init failed due to non-numpy input type. Abort.")
-		n = A.shape[1]
 		m = A.shape[0]
+		n = A.shape[1]
 		# Check if the size matches.
 		if n < m or \
 			c.shape != (n,) or \
@@ -24,13 +41,9 @@ class Simplex:
 			(not basis is None and basis.shape != (m,)):
 			raise ValueError("Init failed due to mis-matched input size. Abort.")
 
-	# Construct a new Simplex instance. 
-	# input: 
-	# 		c, A, b: the same as the standard simplex form. Using type ndarray.
-	# 		basis: ndarray with size (m,), the init solution. If not given, it
-	#			will be reset to np.arange(m-n, m), as the easiest solution 
-	# 			usally falls there.
-	def __init__(self, c, A, b, basis = None):
+	# Used to update c and A, as they will change with rho.
+	# See the input param in __init__
+	def updateProblem(self, c, A, b, basis = None):
 		self.inputCheck_(c, A, b, basis)
 		m, n = A.shape
 		self.n_, self.m_ = (n, m)
@@ -41,10 +54,6 @@ class Simplex:
 		else:
 			self.basis_ = basis
 		self.check_ = self.zSubC_();
-
-	# Used to update c and A, as they will change with rho.
-	def updateC(c):	self.c_ = c
-	def updateA(A):	self.A = A
 
 	# input: none
 	# return: 
@@ -59,8 +68,8 @@ class Simplex:
 		return z - self.c_
 
 	# input: none
-	# output:
-	# 		boolean, determining if the problem is in optimal now.
+	# return:
+	# 		boolean, determining if the problem is optimal now.
 	def isOptimal_(self):
 		return np.all(self.check_ <= 0)
 
@@ -70,42 +79,62 @@ class Simplex:
 	def solve(self, verbose = False):
 		tableau = self.tableau_
 		# Start the simplex algorithm:
-		count = 0
-
-		while not self.isOptimal_():
+		iter_cnt = 0
+		while not self.isOptimal_() and iter_cnt < self.iter_max_:
 			# Determine the pivot column:
 			# The pivot column is the column corresponding to 
 			# minimum zj-cj.
-			pivot_col = np.argmax(self.check_)
+			pivot_col_idx = np.argmax(self.check_)
 			# Determine the positive elements in the pivot column.
 			# If there are no positive elements in the pivot column  
 			# then the optimal solution is unbounded.
-			positive_rows = np.where(tableau[:,pivot_col] > 0)[0]
+			positive_rows = np.where(tableau[:,pivot_col_idx] > 0)[0]
 			if positive_rows.size == 0:
 				print('Unbounded Solution!')
 				break
 			# Determine the pivot row:
-			divide=(tableau[positive_rows, self.n_]
-				/tableau[positive_rows,pivot_col])
-			pivot_row = positive_rows[np.where(divide 
-				== divide.min())[0][-1]]
+			divide = \
+				(tableau[positive_rows, self.n_] / tableau[positive_rows,pivot_col_idx])
+			pivot_row_idx = \
+				positive_rows[np.where(divide == divide.min())[0][-1]]
 			# Update the basis:
-			self.basis_[pivot_row] = pivot_col
+			self.basis_[pivot_row_idx] = pivot_col_idx
 			# Perform gaussian elimination to make pivot element one and
 			# elements above and below it zero:
-			tableau[pivot_row,:]=(tableau[pivot_row,:]
-				/tableau[pivot_row,pivot_col])
-			for row in range(self.m_):
-				if row != pivot_row:
-					tableau[row,:] = (tableau[row,:] 
-						- tableau[row,pivot_col]*tableau[pivot_row,:])
+			pivot, pivot_col, pivot_row = \
+				self.getPivotOfTableau_(pivot_col_idx, pivot_row_idx)
+			# No easy way to explain why the two lines below performs Gaussian elimination,
+			# grasp a matrix, name a pivot and try your self.
+			#
+			# | 1  3  4  5|   | 3|                        |-5  0 -5  8|
+			# | 2 *1* 3 -1| - | 1| / 1 * | 2  1  3  -1| = | 0  0  0  0|
+			# |-3 -1  2  1|   |-1|                        |-1  0  5  0| 
+			#
+			# |-5  0 -5  8|   | 0  0  0  0|   |-5  0 -5  8|
+			# | 0  0  0  0| + | 2  1  3 -1| = | 2  1  3 -1|
+			# |-1  0  5  0|   | 0  0  0  0|   |-1  0  5  0|
+			# 
+			# I just made up the example above.
+			tableau -= pivot_col.reshape((-1, 1)) * pivot_row.reshape((1, -1))
+			tableau[pivot_row_idx, :] += pivot_row
+
 			if verbose:
-				print('Step %d' % count)
+				print('Step %d' % iter_cnt)
 				print(tableau)
 				pause()
 			# Determine zj-cj
-			count += 1
+			iter_cnt += 1
 			self.check_ = self.zSubC_();
+
+	# input: c, r. Int, specifying the position of a pivot.
+	# return:
+	# 		pivot: double.
+	# 		pivot_row, pivot_col: ndarray with size (n,) (m,)
+	def getPivotOfTableau_(self, c, r):
+		pivot = self.tableau_[r,c]
+		pivot_row = self.tableau_[r, :] / pivot
+		pivot_col = self.tableau_[:, c]
+		return pivot, pivot_col, pivot_row
 
 
 	def getSolution(self):
@@ -113,14 +142,12 @@ class Simplex:
 		# In case the user has solved, the overhead will be 0 as solve() 
 		# will return almost instantly.
 		self.solve()
-		# Get the no of columns in the tableau:
-		n_cols = self.tableau_.shape[1]
 		# Get the optimal solution:
 		solution = np.zeros(self.c_.size)
-		solution[list(self.basis_)] = self.tableau_[:,n_cols-1]
+		solution[list(self.basis_)] = self.tableau_[:,self.n_]
 		# Determine the optimal value:
-		value = np.sum(self.c_[list(self.basis_)] * self.tableau_[:,n_cols-1])
-		return solution,value
+		optimal = np.sum(self.c_[list(self.basis_)] * self.tableau_[:,self.n_])
+		return solution, optimal
 
 	# Return dual based on primal solution.
 	def getDual():
