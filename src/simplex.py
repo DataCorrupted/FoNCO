@@ -136,8 +136,7 @@ class Simplex:
 			if verbose:
 				print('Step %d' % iter_cnt)
 				print(self.tableau_)
-				pause()
-			# Determine zj-cj
+				pause(self.zSubC_(), self.getStatus()[0], self.getStatus()[1] )
 			iter_cnt += 1
 
 	# input: c, r. Int, specifying the position of a pivot.
@@ -202,7 +201,7 @@ if __name__ == "__main__":
 	c, A, b, basis = Q2();
 	# Run the simplex algorithm:
 	s = Simplex(c, A, b, basis);
-	#s.solve(verbose = True)
+	s.solve(verbose = True)
 	# Get the optimal soultion:
 	while not s.isOptimal():
 		optimal_solution,optimal_value = s.getStatus()
