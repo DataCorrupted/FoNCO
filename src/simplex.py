@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.linalg
 
 # Simple function used to debug. 
 # input:
@@ -17,8 +18,8 @@ class Simplex:
 	# input: 
 	# 		c, A, b: the same as the standard simplex form. Using type ndarray.
 	# 		basis: ndarray with size (m,), the init solution. If not given, it
-	#			will be reset to np.arange(m-n, m), as the easiest solution 
-	# 			usally falls there.
+	#			will be reset to np.arange(m-n, m), as the correct solution 
+	# 			usally falls there. We DO NOT check if that matrix is invertable.
 	def __init__(self, c, A, b, basis = None, iter_max = 100):
 		self.iter_max_ = iter_max
 		self.resetProblem(c, A, b, basis)
@@ -67,6 +68,12 @@ class Simplex:
 		else:
 			print("Reset object function failed due to type or size mis-match.")
 
+	# Return dual based on primal solution.
+	def getDual(self):
+		cb = np.reshape(self.c_[self.basis_], (1, -1))
+		b_inv = np.linalg.inv(self.tableau_[:, self.basis_])
+		return cb.dot(b_inv)
+
 	# input: none
 	# return: 
 	# 		ndarray with size (1, n)(a vector) indicating z-c
@@ -74,8 +81,8 @@ class Simplex:
 		# Compute zj-cj. If zj - cj >= 0 for all columns then current 
 		# solution is optimal solution.
 		A = self.tableau_[:, 0: self.n_]
-		cb = np.reshape(self.c_[list(basis)], (self.m_, 1))
-		z = np.sum(cb * A, axis = 0)
+		w = self.getDual()
+		z = np.sum(w.dot(A), axis = 0)
 		# Leave this for the sake of debug
 		return z - self.c_
 
@@ -90,6 +97,8 @@ class Simplex:
 		# Determine the pivot column:
 		# The pivot column is the column corresponding to 
 		# minimum zj-cj.
+		
+		# TODO: rethink where you should put this.
 		self.check_ = self.zSubC_();
 		pivot_col_idx = np.argmax(self.check_)
 		# Determine the positive elements in the pivot column.
@@ -136,7 +145,7 @@ class Simplex:
 			if verbose:
 				print('Step %d' % iter_cnt)
 				print(self.tableau_)
-				pause(self.zSubC_(), self.getStatus()[0], self.getStatus()[1] )
+				print(self.getStatus())
 			iter_cnt += 1
 
 	# input: c, r. Int, specifying the position of a pivot.
@@ -159,14 +168,10 @@ class Simplex:
 	def getStatus(self):
 		# Get the optimal solution:
 		x = np.zeros(self.c_.size)
-		x[list(self.basis_)] = self.tableau_[:,self.n_]
+		x[self.basis_] = self.tableau_[:,self.n_]
 		# Determine the optimal value:
-		obj = np.sum(self.c_[list(self.basis_)] * self.tableau_[:,self.n_])
+		obj = np.sum(self.c_[self.basis_] * self.tableau_[:,self.n_])
 		return x, obj
-
-	# Return dual based on primal solution.
-	def getDual():
-		pass
 
 if __name__ == "__main__":
 	# Below defines some test problems.
@@ -196,6 +201,19 @@ if __name__ == "__main__":
 		# Define the objective function and the initial basis:
 		c = np.array([1, -2, 1, 0, 0, 0])
 		basis = np.array([3, 4, 5])
+		return c, A, b, basis
+
+	def Q3():
+		# Check this example on pp.136
+		# Define A, b:
+		A = np.array([
+			[2, 1, 4, 0, -1,  0],
+			[2, 2, 0, 4,  0, -1]
+		], dtype = np.float64)
+		b = np.array([[2], [3]], dtype = np.float64)
+		# Define the objective function and the initial basis:
+		c = np.array([12, 8, 16, 12, 0, 0])
+		basis = np.array([4, 5])
 		return c, A, b, basis
 
 	c, A, b, basis = Q2();
