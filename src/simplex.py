@@ -21,7 +21,7 @@ class Simplex:
 	# 			usally falls there.
 	def __init__(self, c, A, b, basis = None, iter_max = 100):
 		self.iter_max_ = iter_max
-		self.updateProblem(c, A, b, basis)
+		self.resetProblem(c, A, b, basis)
 
 	# Check if the input is legal. Don't worry about it if you
 	# are not familiar with numpy's API.
@@ -43,7 +43,7 @@ class Simplex:
 
 	# Used to update c and A, as they will change with rho.
 	# See the input param in __init__
-	def updateProblem(self, c, A, b, basis = None):
+	def resetProblem(self, c, A, b, basis = None):
 		self.inputCheck_(c, A, b, basis)
 		m, n = A.shape
 		self.n_, self.m_ = (n, m)
@@ -54,6 +54,18 @@ class Simplex:
 		else:
 			self.basis_ = basis
 		self.check_ = self.zSubC_();
+
+	# Changes the object function without changing anything else.
+	# You can always do this as the tableau won't change except
+	# the last row(z-c).
+	# input: 
+	# 		c: ndarray with size (n,)
+	def resetC(c):
+		if type(c) == np.ndarray and c.shape == (self.n_,):
+			self.c_ = c;
+			self.check_ = self.zSubC_();
+		else:
+			print("Reset object function failed due to type or size mis-match.")
 
 	# input: none
 	# return: 
@@ -70,61 +82,63 @@ class Simplex:
 	# input: none
 	# return:
 	# 		boolean, determining if the problem is optimal now.
-	def isOptimal_(self):
+	def isOptimal(self):
 		return np.all(self.check_ <= 0)
+
+	def updateBasis(self):
+		tableau = self.tableau_
+		# Determine the pivot column:
+		# The pivot column is the column corresponding to 
+		# minimum zj-cj.
+		self.check_ = self.zSubC_();
+		pivot_col_idx = np.argmax(self.check_)
+		# Determine the positive elements in the pivot column.
+		# If there are no positive elements in the pivot column  
+		# then the optimal solution is unbounded.
+		positive_rows = np.where(tableau[:,pivot_col_idx] > 0)[0]
+		# We are solving problems that are almost always have bounds.
+		# Let't not worry about it first.
+		if positive_rows.size == 0:	print('Unbounded Solution!')
+		# Determine the pivot row:
+		divide = \
+			(tableau[positive_rows, self.n_] / tableau[positive_rows,pivot_col_idx])
+		pivot_row_idx = \
+			positive_rows[np.where(divide == divide.min())[0][-1]]
+		# Update the basis:
+		self.basis_[pivot_row_idx] = pivot_col_idx
+		# Perform gaussian elimination to make pivot element one and
+		# elements above and below it zero:
+		pivot, pivot_col, pivot_row = \
+			self.getPivotOfTableau_(pivot_col_idx, pivot_row_idx)
+		# No easy way to explain why the two lines below performs Gaussian elimination,
+		# grasp a matrix, name a pivot and try your self.
+		#
+		# | 1  3  4  5|   | 3|                        |-5  0 -5  8|
+		# | 2 *1* 3 -1| - | 1| / 1 * | 2  1  3  -1| = | 0  0  0  0|
+		# |-3 -1  2  1|   |-1|                        |-1  0  5  0| 
+		#
+		# |-5  0 -5  8|   | 0  0  0  0|   |-5  0 -5  8|
+		# | 0  0  0  0| + | 2  1  3 -1| = | 2  1  3 -1|
+		# |-1  0  5  0|   | 0  0  0  0|   |-1  0  5  0|
+		# 
+		# I just made up the example above.
+		tableau -= pivot_col.reshape((-1, 1)) * pivot_row.reshape((1, -1))
+		tableau[pivot_row_idx, :] += pivot_row
 
 	# input: 
 	# 		verbose: boolean, determing whether to print debug information.
 	# return: none
 	def solve(self, verbose = False):
-		tableau = self.tableau_
 		# Start the simplex algorithm:
 		iter_cnt = 0
-		while not self.isOptimal_() and iter_cnt < self.iter_max_:
-			# Determine the pivot column:
-			# The pivot column is the column corresponding to 
-			# minimum zj-cj.
-			pivot_col_idx = np.argmax(self.check_)
-			# Determine the positive elements in the pivot column.
-			# If there are no positive elements in the pivot column  
-			# then the optimal solution is unbounded.
-			positive_rows = np.where(tableau[:,pivot_col_idx] > 0)[0]
-			if positive_rows.size == 0:
-				print('Unbounded Solution!')
-				break
-			# Determine the pivot row:
-			divide = \
-				(tableau[positive_rows, self.n_] / tableau[positive_rows,pivot_col_idx])
-			pivot_row_idx = \
-				positive_rows[np.where(divide == divide.min())[0][-1]]
-			# Update the basis:
-			self.basis_[pivot_row_idx] = pivot_col_idx
-			# Perform gaussian elimination to make pivot element one and
-			# elements above and below it zero:
-			pivot, pivot_col, pivot_row = \
-				self.getPivotOfTableau_(pivot_col_idx, pivot_row_idx)
-			# No easy way to explain why the two lines below performs Gaussian elimination,
-			# grasp a matrix, name a pivot and try your self.
-			#
-			# | 1  3  4  5|   | 3|                        |-5  0 -5  8|
-			# | 2 *1* 3 -1| - | 1| / 1 * | 2  1  3  -1| = | 0  0  0  0|
-			# |-3 -1  2  1|   |-1|                        |-1  0  5  0| 
-			#
-			# |-5  0 -5  8|   | 0  0  0  0|   |-5  0 -5  8|
-			# | 0  0  0  0| + | 2  1  3 -1| = | 2  1  3 -1|
-			# |-1  0  5  0|   | 0  0  0  0|   |-1  0  5  0|
-			# 
-			# I just made up the example above.
-			tableau -= pivot_col.reshape((-1, 1)) * pivot_row.reshape((1, -1))
-			tableau[pivot_row_idx, :] += pivot_row
-
+		while not self.isOptimal() and iter_cnt < self.iter_max_:
+			self.updateBasis()
 			if verbose:
 				print('Step %d' % iter_cnt)
-				print(tableau)
+				print(self.tableau_)
 				pause()
 			# Determine zj-cj
 			iter_cnt += 1
-			self.check_ = self.zSubC_();
 
 	# input: c, r. Int, specifying the position of a pivot.
 	# return:
@@ -136,18 +150,20 @@ class Simplex:
 		pivot_col = self.tableau_[:, c]
 		return pivot, pivot_col, pivot_row
 
-
 	def getSolution(self):
 		# Re-solve it in case user changed something or forget to solve it.
 		# In case the user has solved, the overhead will be 0 as solve() 
 		# will return almost instantly.
 		self.solve()
+		return self.getStatus()
+
+	def getStatus(self):
 		# Get the optimal solution:
-		solution = np.zeros(self.c_.size)
-		solution[list(self.basis_)] = self.tableau_[:,self.n_]
+		x = np.zeros(self.c_.size)
+		x[list(self.basis_)] = self.tableau_[:,self.n_]
 		# Determine the optimal value:
-		optimal = np.sum(self.c_[list(self.basis_)] * self.tableau_[:,self.n_])
-		return solution, optimal
+		obj = np.sum(self.c_[list(self.basis_)] * self.tableau_[:,self.n_])
+		return x, obj
 
 	# Return dual based on primal solution.
 	def getDual():
@@ -186,12 +202,15 @@ if __name__ == "__main__":
 	c, A, b, basis = Q2();
 	# Run the simplex algorithm:
 	s = Simplex(c, A, b, basis);
-	s.solve(verbose = True)
+	#s.solve(verbose = True)
 	# Get the optimal soultion:
-	optimal_solution,optimal_value = s.getSolution()
-	# Print the results:
-	# change print later.
-	print('Solution:\nx1=%0.2f, x2=%0.2f, x3=%0.2f, x4=%0.2f\nz=%0.4f' 
-		% (optimal_solution[0],optimal_solution[1],optimal_solution[2],
-			optimal_solution[3],optimal_value))
+	while not s.isOptimal():
+		optimal_solution,optimal_value = s.getStatus()
+		# Print the results:
+		# change print later.
+		print('Solution:\nx1=%0.2f, x2=%0.2f, x3=%0.2f, x4=%0.2f\nz=%0.4f' 
+			% (optimal_solution[0],optimal_solution[1],optimal_solution[2],
+				optimal_solution[3],optimal_value))
+		pause()
+		s.updateBasis()
 

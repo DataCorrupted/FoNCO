@@ -277,6 +277,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         if ratio_opt > 0:
             sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / delta_linearized_model
             if np.isnan(sigma):
+                # Set it to a very small value to escape inf case.
                 sigma = -0x80000000
             if sigma < SIGMA:
                 delta *= 0.25
@@ -291,6 +292,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         if sigma > SIGMA and ratio_opt > 0:
             # Make sure that the inf norm of d_k is delta
             x_k += d_k
+        # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
             rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / \
