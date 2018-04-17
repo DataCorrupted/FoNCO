@@ -180,11 +180,11 @@ if __name__ == "__main__":
 		# Check this example on pp.40
 		# Define A, b:
 		A = np.array([
-			[-1,  2, 1, 0, 0],
-			[ 2,  3, 0, 1, 0],
-			[ 1, -1, 0, 0, 1]
+			[ 1, -2, -1, 0, 0],
+			[ 2,  3,  0, 1, 0],
+			[ 1, -1,  0, 0, 1]
 		], dtype = np.float64)
-		b = np.array([[4], [12], [3]], dtype = np.float64)
+		b = np.array([[-4], [12], [3]], dtype = np.float64)
 		# Define the objective function and the initial basis:
 		c = np.array([-4, -1, 0, 0, 0])
 		basis = np.array([2, 3, 4])
