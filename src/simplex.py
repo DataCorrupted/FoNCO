@@ -146,6 +146,7 @@ class Simplex:
 				print('Step %d' % iter_cnt)
 				print(self.tableau_)
 				print(self.getStatus())
+				pause()
 			iter_cnt += 1
 
 	# input: c, r. Int, specifying the position of a pivot.
