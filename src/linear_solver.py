@@ -1,0 +1,1 @@
+def standardize(A, b, rho*g, delta)

@@ -158,6 +158,9 @@ def initialize_dual_var(adjusted_equatn, b):
     return dual_var
 
 
+#def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param):
+#	A_, b_, c_ = standardize(A, b, rho*g, delta, cuter.setup_args_dict['adjusted_equatn'])
+
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
     """
     Run sub-problem solver to obtain the search direction and dual variable estimation
@@ -174,6 +177,10 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     :param dust_param: dust parameter class instance
     :return:
     """
+    print(A)
+    print(b)
+    print(g*rho)
+    print(cuter.setup_args_dict['adjusted_equatn'])
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
     multiplier_lagrangian = cuter.dual_var_adapter(dual_var)
@@ -258,6 +265,9 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         # DUST / PSST / Subproblem here.
         dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
             get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
+
+        # Debuging	
+        break;
         if (np.max(np.abs(d_k)) > delta):
             step_size = ( delta / np.max(np.abs(d_k)) )
             d_k *= step_size
@@ -295,6 +305,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
+            # TODO: Change this update, as we are using linear.
             rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / \
                     (g.T.dot(d_k) + 0.5 * d_k.T.dot(H_rho.dot(d_k)))[0, 0]
 

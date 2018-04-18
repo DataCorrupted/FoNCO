@@ -101,7 +101,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
     """
     global success_cnt
     logger = get_logger(log_dir, '{0}.log'.format(problem_name))
-    logger.info('+' * 200)
+    #logger.info('+' * 200)
     with Cuter(os.path.join(sif_dir_root, problem_name)) as cuter:
         try:
             logger.info("Problem name: {0}".format(problem_name))
@@ -145,6 +145,8 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     """
     skip_list = ['HS93', 'HS99EXP', 'HS114', 'HS68', 'HS116', 'HS83', 'HS13', 'HS84', 'HS85', 'HS87', 'HS106']
     problem_list = os.listdir(sif_dir_root)
+    # Debuging.
+    problem_list = ['HS32']
     for problem_name in problem_list:
         if problem_name.startswith("HS") and problem_name not in skip_list:
             if problem_name == 'HS19':
