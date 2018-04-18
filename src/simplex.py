@@ -54,7 +54,6 @@ class Simplex:
 			self.basis_ = np.arange(m-n, m)
 		else:
 			self.basis_ = basis
-		self.check_ = self.zSubC_();
 
 	# Changes the object function without changing anything else.
 	# You can always do this as the tableau won't change except
@@ -64,7 +63,6 @@ class Simplex:
 	def resetC(c):
 		if type(c) == np.ndarray and c.shape == (self.n_,):
 			self.c_ = c;
-			self.check_ = self.zSubC_();
 		else:
 			print("Reset object function failed due to type or size mis-match.")
 
@@ -90,7 +88,7 @@ class Simplex:
 	# return:
 	# 		boolean, determining if the problem is optimal now.
 	def isOptimal(self):
-		return np.all(self.check_ <= 0)
+		return np.all(self.zSubC_() <= 0)
 
 	def updateBasis(self):
 		tableau = self.tableau_
@@ -99,8 +97,7 @@ class Simplex:
 		# minimum zj-cj.
 		
 		# TODO: rethink where you should put this.
-		self.check_ = self.zSubC_();
-		pivot_col_idx = np.argmax(self.check_)
+		pivot_col_idx = np.argmax(self.zSubC_())
 		# Determine the positive elements in the pivot column.
 		# If there are no positive elements in the pivot column  
 		# then the optimal solution is unbounded.
@@ -131,13 +128,15 @@ class Simplex:
 		# |-1  0  5  0|   | 0  0  0  0|   |-1  0  5  0|
 		# 
 		# I just made up the example above.
-		tableau -= pivot_col.reshape((-1, 1)) * pivot_row.reshape((1, -1))
+		tableau -= pivot_col.reshape((-1, 1)).dot(pivot_row.reshape((1, -1)))
 		tableau[pivot_row_idx, :] += pivot_row
 
 	# input: 
 	# 		verbose: boolean, determing whether to print debug information.
 	# return: none
 	def solve(self, verbose = False):
+		print('Original problem: \n', self.tableau_, '\n', self.c_)
+		pause()
 		# Start the simplex algorithm:
 		iter_cnt = 0
 		while not self.isOptimal() and iter_cnt < self.iter_max_:
@@ -146,6 +145,7 @@ class Simplex:
 				print('Step %d' % iter_cnt)
 				print(self.tableau_)
 				print(self.getStatus())
+				print(self.isOptimal())
 				pause()
 			iter_cnt += 1
 
