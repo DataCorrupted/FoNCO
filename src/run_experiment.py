@@ -46,7 +46,7 @@ def print_problem_statement(setup_args_dict, logger):
     nlow = np.sum(bl_flag)
     nup = np.sum(bu_flag)
     obj_scale = setup_args_dict['obj_scale']
-
+    #if setup_args_dict['n'][0] == 2 :
     str_format = '| Var #:{0:6d} | Con #:{1:6d} | Eq #:{2:6d} | Low_bound #:{3:6d} | Up_bound #:{4:6d} | Obj_scale: {5:+.5e}' \
         .format(setup_args_dict['n'][0], setup_args_dict['m'][0], num_eq, nlow, nup, obj_scale)
 
@@ -146,7 +146,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     skip_list = ['HS93', 'HS99EXP', 'HS114', 'HS68', 'HS116', 'HS83', 'HS13', 'HS84', 'HS85', 'HS87', 'HS106']
     problem_list = os.listdir(sif_dir_root)
     # Debuging.
-    problem_list = ['HS32']
+    problem_list = ['HS14']
     for problem_name in problem_list:
         if problem_name.startswith("HS") and problem_name not in skip_list:
             if problem_name == 'HS19':
