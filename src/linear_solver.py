@@ -10,7 +10,7 @@ def standardize(A, b, g, delta, equatn):
 	#  
 	# <c, x> = | rho*g, e(1*, |
  	m, n = A.shape
-	return makeA_(A), makeBasis_(equatn), makeA_(b, delta, n), makeC_(g, equatn) 
+	return makeA_(A), makeBasis_(m, n), makeA_(b, delta, n), makeC_(g, equatn) 
 
 
 def makeA_(A):
@@ -48,8 +48,11 @@ def makeC_(g, equatn):
 	# Transpose as simplex solves prefers c with shape (1, -1)
 	return c_.T
 
-def makeBasis_(equatn):
-	pass
+def makeBasis_(m, n):
+	return np.concatenate(											\
+		(np.arange(n, m+n),np.arange(2*m+n, 2*m+3*n)), 				\
+		axis = 0													\
+	)
 
 if __name__ == "__main__":
 	def testMakeA():
@@ -113,6 +116,13 @@ if __name__ == "__main__":
 		c_calc = makeC_(g, equatn)
 		assert np.equal(c_calc, c_real).all(), "Got wrong c!"
 		print("Got correct c!")
+
+	def testMakeBasis():
+		basis_real = np.array([3, 4, 5, 6, 7, 13, 14, 15, 16, 17, 18])
+		basis_calc = makeBasis_(5, 3)
+		assert np.equal(basis_calc, basis_real).all(), "Got wrong basis!"
+		print("Got correct basis!")
 	testMakeA()
 	testMakeB()
 	testMakeC()
+	testMakeBasis()
