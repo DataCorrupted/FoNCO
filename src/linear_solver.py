@@ -9,7 +9,7 @@ def standardize(A, b, g, delta, equatn):
 	#
 	#                 A                             x     =       b
 	#  
-	# <c, x> = | rho*g, -rho*g, e(1*m), e(1, #equal) |
+	# c = | rho*g, -rho*g, e(1, m), e(1, #eq) |
 	m, n = A.shape
 	return makeA_(A), makeBasis_(b, n), makeB_(b, delta, n), makeC_(g, equatn) 
 
@@ -56,12 +56,12 @@ def makeC_(g, equatn):
 def makeBasis_(b, n):
 	m = b.shape[0]
 	basis = np.concatenate(											\
-		(np.arange(n, m+n),np.arange(2*m+n, 2*m+3*n)), 				\
+		(np.arange(2*n, m+2*n),np.arange(2*m+2*n, 2*m+4*n)), 				\
 		axis = 0													\
 	)
 	for i in range(m):
 		basis[i] += (b[i] <=0) *m
-	return np.sort(basis)
+	return basis
 
 if __name__ == "__main__":
 	def testMakeA():
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 			[-1],
 			[ 4],
 			])
-		basis_real = np.array([3, 4, 6, 7, 8, 9])
+		basis_real = np.array([6, 5,    8, 9, 10, 11])
 		basis_calc = makeBasis_(b, 2)
 		assert np.equal(basis_calc, basis_real).all(), "Got wrong basis!"
 		print("Got correct basis!")

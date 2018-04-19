@@ -38,11 +38,13 @@ class Simplex:
         m, n = A.shape
         self.n_, self.m_ = (n, m)
         self.c_ = c;
-        self.tableau_ = np.concatenate((A, b), axis=1);
+        self.A_ = A;
         if basis is None:
             self.basis_ = np.arange(m-n, m)
         else:
             self.basis_ = basis
+        b_inv = np.linalg.inv(self.A_[:, self.basis_])
+        self.tableau_ = b_inv.dot(np.concatenate((A, b), axis=1));
 
     # Changes the object function without changing anything else.
     # You can always do this as the tableau won't change except
@@ -58,7 +60,7 @@ class Simplex:
     # Return dual based on primal solution.
     def getDual(self):
         cb = np.reshape(self.c_[self.basis_], (1, -1))
-        b_inv = np.linalg.inv(self.tableau_[:, self.basis_])
+        b_inv = np.linalg.inv(self.A_[:, self.basis_])
         return cb.dot(b_inv)
 
     # input: none
@@ -67,9 +69,8 @@ class Simplex:
     def zSubC_(self):
         # Compute zj-cj. If zj - cj >= 0 for all columns then current 
         # solution is optimal solution.
-        A = self.tableau_[:, 0: self.n_]
         w = self.getDual()
-        z = np.sum(w.dot(A), axis = 0)
+        z = np.sum(w.dot(self.A_), axis = 0)
         # Leave this for the sake of debug
         return z - self.c_
 
@@ -77,7 +78,7 @@ class Simplex:
     # return:
     #       boolean, determining if the problem is optimal now.
     def isOptimal(self):
-        return np.all(self.zSubC_() <= 0)
+        return np.all(self.zSubC_() - 1e-10 <= 0)
 
     def updateBasis(self):
         tableau = self.tableau_
@@ -99,12 +100,14 @@ class Simplex:
             (tableau[positive_rows, self.n_] / tableau[positive_rows,pivot_col_idx])
         pivot_row_idx = \
             positive_rows[np.where(divide == divide.min())[0][-1]]
+
         # Update the basis:
         self.basis_[pivot_row_idx] = pivot_col_idx
         # Perform gaussian elimination to make pivot element one and
         # elements above and below it zero:
         pivot, pivot_col, pivot_row = \
             self.getPivotOfTableau_(pivot_col_idx, pivot_row_idx)
+        print(pivot_row_idx, pivot_col_idx)
         # No easy way to explain why the two lines below performs Gaussian elimination,
         # grasp a matrix, name a pivot and try your self.
         #
@@ -161,7 +164,7 @@ class Simplex:
         b_inv = np.linalg.inv(self.tableau_[:, self.basis_])
         x[self.basis_] = b_inv.dot(self.tableau_[:, self.n_])
         # Determine the optimal value:
-        obj = np.sum(self.c_[self.basis_] * x[self.basis_])
+        obj = np.sum(self.c_ * x)
         return x, obj
 
 if __name__ == "__main__":
@@ -198,20 +201,24 @@ if __name__ == "__main__":
         # Check this example on pp.136
         # Define A, b:
         A = np.array([
-            [2, 1, 4, 0, 1,  0],
-            [2, 2, 0, 4,  0, -1]
+            [ 1, -2, -1,  2, -1, -0,  1,  0,  0,  0,  0,  0],
+            [ 1,  4, -1, -4, -0, -1,  0,  1,  0,  0,  0,  0],
+            [ 1,  0, -1, -0,  0,  0,  0,  0,  1,  0,  0,  0],
+            [ 0,  1, -0, -1,  0,  0,  0,  0,  0,  1,  0,  0],
+            [-1, -0,  1,  0,  0,  0,  0,  0,  0,  0,  1,  0],
+            [-0, -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  1]
         ], dtype = np.float64)
-        b = np.array([[2], [3]], dtype = np.float64)
+        b = np.array([[1], [-4], [1], [1], [1], [1]], dtype = np.float64)
         # Define the objective function and the initial basis:
-        c = np.array([12, 8, 16, 12, 0, 0])
-        basis = np.array([4, 5])
+        c = np.array([0, 2, 0, -2, 1, 1, 1, 0, 0, 0, 0, 0])
+        basis = np.array([6, 5, 8, 9, 10, 11])
         return c, A, b, basis
 
-    c, A, b, basis = Q1();
+    c, A, b, basis = Q3();
     linsov = Simplex(c, A, b, basis)
-    pause(table = linsov.tableau_, dual = linsov.getDual(), zSubC = linsov.zSubC_(), Object = linsov.getObj(), basis = linsov.basis_)
+    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj())
     while not linsov.isOptimal():
         linsov.updateBasis()
-        pause(obj = linsov.getObj())
+        pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj())
         #pause(table = linsov.tableau_, dual = linsov.getDual(), zSubC = linsov.zSubC_(), Object = linsov.getObj(), basis = linsov.basis_)
 
