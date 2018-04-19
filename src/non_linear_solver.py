@@ -2,6 +2,9 @@
 
 from cord_descent import cord_descent
 from cuter_util import *
+from linear_solver import standardize
+from simplex import Simplex, pause
+from debug_utils import pause
 
 STEP_SIZE_MIN = 1e-10
 SIGMA = 0.25
@@ -177,10 +180,15 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     :param dust_param: dust parameter class instance
     :return:
     """
-    print(A)
-    print(b)
-    print(g*rho)
-    print(cuter.setup_args_dict['adjusted_equatn'])
+    A_, basis_, b_, c_ = standardize(A, b, g*rho, 1, cuter.setup_args_dict['adjusted_equatn'])
+
+    linsov = Simplex(c_, A_, b_, basis_)
+#    pause(dual = linsov.getDual(), zSubC = linsov.zSubC_(), Object = linsov.getObj(), basis = linsov.basis_)
+    while not linsov.isOptimal():
+        linsov.updateBasis()
+#        pause(dual = linsov.getDual(), zSubC = linsov.zSubC_(), Object = linsov.getObj()[1], basis = linsov.basis_)
+    obj = linsov.getObj()[0][0:A.shape[1]]
+
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
     multiplier_lagrangian = cuter.dual_var_adapter(dual_var)
@@ -192,6 +200,7 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
                        dust_param.beta_fea, dust_param.beta_opt, dust_param.theta, dust_param.max_sub_iter,
                        eig_add_on=dust_param.add_on_hess, verbose=dust_param.sub_verbose)
 
+    pause(dk_real = d_k, d_k = obj, Dual = linsov.getDual(), Obj = obj.dot(g) * rho)
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
 
@@ -267,7 +276,6 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
             get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
 
         # Debuging	
-        break;
         if (np.max(np.abs(d_k)) > delta):
             step_size = ( delta / np.max(np.abs(d_k)) )
             d_k *= step_size
