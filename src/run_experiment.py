@@ -10,7 +10,7 @@ import time
 from cuter_util import Cuter
 from non_linear_solver import non_linear_solve, DustParam, non_linear_solve_trust_region
 
-
+np.set_printoptions(precision = 2, linewidth = 200)
 def get_logger(log_dir, log_file, logLevel=logging.DEBUG):
     """
     Create an logging instance with log stored under `log_dir`/`log_file`

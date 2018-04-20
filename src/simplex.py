@@ -1,6 +1,9 @@
 import numpy as np
 import numpy.linalg
 from debug_utils import pause
+
+np.set_printoptions(precision = 2, linewidth = 200)
+
 class Simplex:
 
     # Construct a new Simplex instance. 
@@ -107,7 +110,6 @@ class Simplex:
         # elements above and below it zero:
         pivot, pivot_col, pivot_row = \
             self.getPivotOfTableau_(pivot_col_idx, pivot_row_idx)
-        print(pivot_row_idx, pivot_col_idx)
         # No easy way to explain why the two lines below performs Gaussian elimination,
         # grasp a matrix, name a pivot and try your self.
         #
@@ -168,6 +170,7 @@ class Simplex:
         return x, obj
 
 if __name__ == "__main__":
+
     # Below defines some test problems.
     def Q1():
         # Check this example on pp.40
@@ -198,7 +201,6 @@ if __name__ == "__main__":
         return c, A, b, basis
 
     def Q3():
-        # Check this example on pp.136
         # Define A, b:
         A = np.array([
             [ 1, -2, -1,  2, -1, -0,  1,  0,  0,  0,  0,  0],
@@ -212,13 +214,43 @@ if __name__ == "__main__":
         # Define the objective function and the initial basis:
         c = np.array([0, 2, 0, -2, 1, 1, 1, 0, 0, 0, 0, 0])
         basis = np.array([6, 5, 8, 9, 10, 11])
+        
+        return c, A, b, basis
+
+    def Q4():
+        # Check this example on pp.46
+        # Define A, b:
+        A = np.array([
+            [ 2,  1,  4, 0, -1,  0],
+            [ 2,  2,  0, 4,  0, -1]
+        ], dtype = np.float64)
+        b = np.array([[2], [3]], dtype = np.float64)
+        # Define the objective function and the initial basis:
+        c = np.array([12, 8, 16, 12, 0, 0])
+        basis = np.array([2, 3])
         return c, A, b, basis
 
     c, A, b, basis = Q3();
+
+    def callBack(xk, **kwargs):
+        if kwargs['phase'] == 2:
+            basis = kwargs['basis']
+            print(basis)
+            print(A)
+            print(kwargs['tableau'])
+            b_inv = np.linalg.inv(A[:, basis])
+            cb = np.reshape(c[basis], (1, -1))
+            print(cb.dot(b_inv))
+    def printCorrectAns(A, b, c):
+        from scipy.optimize import linprog
+        ans = linprog(c, A_eq = A, b_eq = b, method = 'simplex', callback = callBack)
+        print(ans)
+    
+    printCorrectAns(A, b, c)
     linsov = Simplex(c, A, b, basis)
-    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj())
+    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj(), dual = linsov.getDual())
     while not linsov.isOptimal():
         linsov.updateBasis()
-        pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj())
+        pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj(), dual = linsov.getDual())
         #pause(table = linsov.tableau_, dual = linsov.getDual(), zSubC = linsov.zSubC_(), Object = linsov.getObj(), basis = linsov.basis_)
 

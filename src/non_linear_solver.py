@@ -2,8 +2,8 @@
 
 from cord_descent import cord_descent
 from cuter_util import *
-from linear_solver import standardize
-from simplex import Simplex, pause
+from linear_solver import standardize, SimplexWrapper
+from simplex import Simplex
 from debug_utils import pause
 
 STEP_SIZE_MIN = 1e-10
@@ -180,19 +180,10 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     :param dust_param: dust parameter class instance
     :return:
     """
-    A_, basis_, b_, c_ = standardize(A, b, g*rho, 1, cuter.setup_args_dict['adjusted_equatn'])
-    linsov = Simplex(c_, A_, b_, basis_)
-    print linsov.tableau_
-    print linsov.zSubC_()
-    pause(dual = linsov.getDual(), Object = linsov.getObj(), basis = linsov.basis_)
-    while not linsov.isOptimal():
-        linsov.updateBasis()
-        print linsov.tableau_
-        print linsov.zSubC_()
-        pause(dual = linsov.getDual(), Object = linsov.getObj(), basis = linsov.basis_)
-    n = A.shape[1]
-    obj = linsov.getObj()[0]
-    obj = obj[0: n] - obj[n: 2*n]
+    
+    A_, _, b_, c_ = standardize(A, b, g*rho, 1, cuter.setup_args_dict['adjusted_equatn'])
+    linsov = SimplexWrapper(c_, A_, b_)
+    linsov.solve()
 
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
@@ -205,7 +196,7 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
                        dust_param.beta_fea, dust_param.beta_opt, dust_param.theta, dust_param.max_sub_iter,
                        eig_add_on=dust_param.add_on_hess, verbose=dust_param.sub_verbose)
 
-    pause(dk_real = d_k, real_dual = dual_var, d_k = obj, Dual = linsov.getDual(), Obj = obj.dot(g) * rho)
+    pause(dk_real = d_k, real_dual = dual_var, d_k = linsov.getPrimal(), Dual = linsov.getDual(), Obj = linsov.getObj())
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
 

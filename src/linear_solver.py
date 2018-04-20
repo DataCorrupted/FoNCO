@@ -1,4 +1,71 @@
 import numpy as np
+import numpy.linalg
+from scipy.optimize import linprog
+
+
+class SimplexWrapper:
+
+	# Construct a new Simplex instance. 
+	# input: 
+	#       c, A, b: the same as the standard simplex form. Using type ndarray.
+	def __init__(self, c, A, b, iter_max = 100):
+		self.iter_max_ = iter_max
+		self.resetProblem(c, A, b)
+
+	# Check if the input is legal. Don't worry about it if you
+	# are not familiar with numpy's API.
+	def inputCheck_(self, c, A, b):
+		# Check if obj: cx, constrain Ax = b is of type np.
+		if  type(c) != np.ndarray or \
+			type(A) != np.ndarray or \
+			type(b) != np.ndarray:
+			raise ValueError("Init failed due to non-numpy input type. Abort.")
+		m = A.shape[0]
+		n = A.shape[1]
+		# Check if the size matches.
+		if n < m or \
+			c.shape != (n,) or b.shape != (m, 1):
+			raise ValueError("Init failed due to mis-matched input size. Abort.")
+
+	# Used to update c and A, as they will change with rho.
+	# See the input param in __init__
+	def resetProblem(self, c, A, b):
+		self.inputCheck_(c, A, b)
+		self.c_ = c;
+		self.A_ = A;
+		self.b_ = b;
+
+	# Changes the object function without changing anything else.
+	# You can always do this as the tableau won't change except
+	# the last row(z-c).
+	# input: 
+	#       c: ndarray with size (n,)
+	def resetC(self, c):
+		if type(c) == np.ndarray and c.shape == (self.n_,):
+			self.c_ = c;
+		else:
+			print("Reset object function failed due to type or size mis-match.")
+
+	def simplexCallback_(self, d, **kwargs):
+		if kwargs['phase'] == 2:
+			self.iter_cnt_ += 1;
+			self.dual_ = cb.dot(b_inv)
+			self.primal_ = np.zeros(self.c_.size)
+			self.primal_[basis] = kwargs['tableau'][:, -1]
+			self.obj_ = self.c_.dot(self.primal_)
+
+
+	def solve(self):
+		self.iter_cnt_ = 0;
+		print linprog(
+			self.c_, A_eq = self.A_, b_eq = self.b_, 
+			method = 'simplex', callback = self.simplexCallback_)
+
+	def getObj(self): return self.obj_
+	def getDual(self): return self.dual_
+	def getPrimal(self): return self.primal_
+	def getIterCnt(self): return self.iter_cnt_
+
 def standardize(A, b, g, delta, equatn):
 	#										            | d+(n,) |
 	# 											        | d-(n,) |
