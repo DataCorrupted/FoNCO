@@ -186,8 +186,11 @@ if __name__ == "__main__":
 		basis_calc = makeBasis_(b, 2)
 		assert np.equal(basis_calc, basis_real).all(), "Got wrong basis!"
 		print("Got correct basis!")
-	print("Running unit tests...")
+	print("Running unit tests for matrix maker...")
 	testMakeA()
 	testMakeB()
 	testMakeC()
 	testMakeBasis()
+
+	print("Running unit tests for solver...")
+	
