@@ -180,10 +180,14 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     :param dust_param: dust parameter class instance
     :return:
     """
-    
-    A_, _, b_, c_ = standardize(A, b, g*rho, 1, cuter.setup_args_dict['adjusted_equatn'])
-    linsov = SimplexWrapper(c_, A_, b_)
+
+    equatn = cuter.setup_args_dict['adjusted_equatn']
+    delta = 10;
+    c_, A_, b_, _ = standardize(g, rho, A, b, 10, equatn)
+    linsov = SimplexWrapper(c_, A_, b_, g, rho, equatn)
+    print(g, rho, A, b)
     linsov.solve()
+
 
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
@@ -191,12 +195,16 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     H_l = cuter.get_hessian_lagrangian(x_k, multiplier_lagrangian, rescale=rescale)
     H_0 = H_l - H_f
 
-    dual_var, d_k, lam, _, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho \
+    dual_var, d_k, _, _, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho \
         = cord_descent(H_0, H_f, rho, g, A, b, cuter.setup_args_dict['adjusted_equatn'], omega,
                        dust_param.beta_fea, dust_param.beta_opt, dust_param.theta, dust_param.max_sub_iter,
                        eig_add_on=dust_param.add_on_hess, verbose=dust_param.sub_verbose)
 
-    pause(dk_real = d_k, real_dual = dual_var, d_k = linsov.getPrimal(), Dual = linsov.getDual(), Obj = linsov.getObj())
+    m, n = A.shape
+    primal = linsov.getPrimalVar()
+    primal = primal[0:n] - primal[n:2*n]
+    pause("sqp_primal: ", d_k.T, "slp_primal: ", primal, "sqp_dual: ", dual_var.T, "slp_dual: ", linsov.getDualVar()[:m], "PrimalObj", linsov.getPrimalObj(), "DualObj", linsov.getDualObj(), "iter_cnt", linsov.getIterCnt())
+    #pause(dk_real = d_k, real_dual = dual_var, d_k = linsov.getPrimal(), Dual = linsov.getDual(), Obj = linsov.getObj())
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
 

@@ -171,66 +171,7 @@ class Simplex:
 
 if __name__ == "__main__":
 
-    # Below defines some test problems.
-    def Q1():
-        # Check this example on pp.40
-        # Define A, b:
-        A = np.array([
-            [ -1, 2, 1, 0, 0],
-            [ 2,  3,  0, 1, 0],
-            [ 1, -1,  0, 0, 1]
-        ], dtype = np.float64)
-        b = np.array([[4], [12], [3]], dtype = np.float64)
-        # Define the objective function and the initial basis:
-        c = np.array([-4, -1, 0, 0, 0])
-        basis = np.array([2, 3, 4])
-        return c, A, b, basis
-
-    def Q2():
-        # Check this example on pp.46
-        # Define A, b:
-        A = np.array([
-            [ 1,  1, -2, 1, 0, 0],
-            [ 2, -1,  4, 0, 1, 0],
-            [-1,  2, -4, 0, 0, 1]
-        ], dtype = np.float64)
-        b = np.array([[10], [8], [4]], dtype = np.float64)
-        # Define the objective function and the initial basis:
-        c = np.array([1, -2, 1, 0, 0, 0])
-        basis = np.array([3, 4, 5])
-        return c, A, b, basis
-
-    def Q3():
-        # Define A, b:
-        A = np.array([
-            [ 1, -2, -1,  2, -1, -0,  1,  0,  0,  0,  0,  0],
-            [ 1,  4, -1, -4, -0, -1,  0,  1,  0,  0,  0,  0],
-            [ 1,  0, -1, -0,  0,  0,  0,  0,  1,  0,  0,  0],
-            [ 0,  1, -0, -1,  0,  0,  0,  0,  0,  1,  0,  0],
-            [-1, -0,  1,  0,  0,  0,  0,  0,  0,  0,  1,  0],
-            [-0, -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  1]
-        ], dtype = np.float64)
-        b = np.array([[1], [-4], [1], [1], [1], [1]], dtype = np.float64)
-        # Define the objective function and the initial basis:
-        c = np.array([0, 2, 0, -2, 1, 1, 1, 0, 0, 0, 0, 0])
-        basis = np.array([6, 5, 8, 9, 10, 11])
-        
-        return c, A, b, basis
-
-    def Q4():
-        # Check this example on pp.46
-        # Define A, b:
-        A = np.array([
-            [ 2,  1,  4, 0, -1,  0],
-            [ 2,  2,  0, 4,  0, -1]
-        ], dtype = np.float64)
-        b = np.array([[2], [3]], dtype = np.float64)
-        # Define the objective function and the initial basis:
-        c = np.array([12, 8, 16, 12, 0, 0])
-        basis = np.array([2, 3])
-        return c, A, b, basis
-
-    c, A, b, basis = Q3();
+    from test_simplex import Q1, Q2, Q3, Q4, Q5
 
     def callBack(xk, **kwargs):
         if kwargs['phase'] == 2:
@@ -245,7 +186,8 @@ if __name__ == "__main__":
         from scipy.optimize import linprog
         ans = linprog(c, A_eq = A, b_eq = b, method = 'simplex', callback = callBack)
         print(ans)
-    
+
+    c, A, b, basis = Q5();
     printCorrectAns(A, b, c)
     linsov = Simplex(c, A, b, basis)
     pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj(), dual = linsov.getDual())
