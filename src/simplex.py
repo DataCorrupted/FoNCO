@@ -14,7 +14,17 @@ class Simplex:
     #           usally falls there. We DO NOT check if that matrix is invertable.
     def __init__(self, c, A, b, basis = None, iter_max = 100):
         self.iter_max_ = iter_max
-        self.resetProblem(c, A, b, basis)
+        self.inputCheck_(c, A, b, basis)
+        m, n = A.shape
+        self.n_, self.m_ = (n, m)
+        self.c_ = c;
+        self.A_ = A;
+        if basis is None:
+            self.basis_ = np.arange(m-n, m)
+        else:
+            self.basis_ = basis
+        b_inv = np.linalg.inv(self.A_[:, self.basis_])
+        self.tableau_ = b_inv.dot(np.concatenate((A, b), axis=1));
 
     # Check if the input is legal. Don't worry about it if you
     # are not familiar with numpy's API.
@@ -34,28 +44,6 @@ class Simplex:
             (not basis is None and basis.shape != (m,)):
             raise ValueError("Init failed due to mis-matched input size. Abort.")
 
-    # Used to update c and A, as they will change with rho.
-    # See the input param in __init__
-    def resetProblem(self, c, A, b, basis = None):
-        self.inputCheck_(c, A, b, basis)
-        m, n = A.shape
-        self.n_, self.m_ = (n, m)
-        self.c_ = c;
-        self.A_ = A;
-        if basis is None:
-            self.basis_ = np.arange(m-n, m)
-        else:
-            self.basis_ = basis
-        b_inv = np.linalg.inv(self.A_[:, self.basis_])
-        self.tableau_ = b_inv.dot(np.concatenate((A, b), axis=1));
-
-    # Changes the object function without changing anything else.
-    # You can always do this as the tableau won't change except
-    # the last row(z-c).
-    # input: 
-    #       c: ndarray with size (n,)
-    def resetC(c):
-        if type(c) == np.ndarray and c.shape == (self.n_,):
             self.c_ = c;
         else:
             print("Reset object function failed due to type or size mis-match.")
@@ -124,25 +112,7 @@ class Simplex:
         # I just made up the example above.
         tableau -= pivot_col.reshape((-1, 1)).dot(pivot_row.reshape((1, -1)))
         tableau[pivot_row_idx, :] += pivot_row
-
-    # input: 
-    #       verbose: boolean, determing whether to print debug information.
-    # return: none
-    def solve(self, verbose = False):
-        print('Original problem: \n', self.tableau_, '\n', self.c_)
-        pause()
-        # Start the simplex algorithm:
-        iter_cnt = 0
-        while not self.isOptimal() and iter_cnt < self.iter_max_:
-            self.updateBasis()
-            if verbose:
-                print('Step %d' % iter_cnt)
-                print(self.tableau_)
-                print(self.getObj())
-                print(self.isOptimal())
-                pause()
-            iter_cnt += 1
-
+        
     # input: c, r. Int, specifying the position of a pivot.
     # return:
     #       pivot: double.
@@ -152,13 +122,6 @@ class Simplex:
         pivot_row = self.tableau_[r, :] / pivot
         pivot_col = self.tableau_[:, c]
         return pivot, pivot_col, pivot_row
-
-    def getSolution(self):
-        # Re-solve it in case user changed something or forget to solve it.
-        # In case the user has solved, the overhead will be 0 as solve() 
-        # will return almost instantly.
-        self.solve()
-        return self.getObj()
 
     def getObj(self):
         # Get the optimal solution:
@@ -194,5 +157,4 @@ if __name__ == "__main__":
     while not linsov.isOptimal():
         linsov.updateBasis()
         pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj(), dual = linsov.getDual())
-        #pause(table = linsov.tableau_, dual = linsov.getDual(), zSubC = linsov.zSubC_(), Object = linsov.getObj(), basis = linsov.basis_)
 

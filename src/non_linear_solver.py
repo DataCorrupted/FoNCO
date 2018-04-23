@@ -184,7 +184,7 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     equatn = cuter.setup_args_dict['adjusted_equatn']
     delta = 10;
     c_, A_, b_, _ = standardize(g, rho, A, b, 10, equatn)
-    linsov = SimplexWrapper(c_, A_, b_, g, rho, equatn)
+    linsov = Simplex(c_, A_, b_, g, rho, equatn)
     print(g, rho, A, b)
     linsov.solve()
 
