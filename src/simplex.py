@@ -18,6 +18,7 @@ class Simplex:
         m, n = A.shape
         self.n_, self.m_ = (n, m)
         self.c_ = c;
+        self.b_ = b;
         self.A_ = A;
         if basis is None:
             self.basis_ = np.arange(m-n, m)
@@ -25,11 +26,12 @@ class Simplex:
             self.basis_ = basis
         b_inv = np.linalg.inv(self.A_[:, self.basis_])
         self.tableau_ = b_inv.dot(np.concatenate((A, b), axis=1));
+        print self.tableau_
 
     # Check if the input is legal. Don't worry about it if you
     # are not familiar with numpy's API.
     def inputCheck_(self, c, A, b, basis):
-        # Check if obj: cx, constrain Ax = b is of type np.
+        # Check if primal: cx, constrain Ax = b is of type np.
         if  type(c) != np.ndarray or \
             type(A) != np.ndarray or \
             type(b) != np.ndarray or \
@@ -44,6 +46,8 @@ class Simplex:
             (not basis is None and basis.shape != (m,)):
             raise ValueError("Init failed due to mis-matched input size. Abort.")
 
+    def resetC(c):
+        if (self.c_.size == c.size):
             self.c_ = c;
         else:
             print("Reset object function failed due to type or size mis-match.")
@@ -52,15 +56,16 @@ class Simplex:
     def getDual(self):
         cb = np.reshape(self.c_[self.basis_], (1, -1))
         b_inv = np.linalg.inv(self.A_[:, self.basis_])
-        return cb.dot(b_inv)
-
+        dual_var = cb.dot(b_inv)
+        dual_obj = dual_var.dot(self.b_)
+        return {'var': dual_var, 'obj': dual_obj[0,0]  }
     # input: none
     # return: 
     #       ndarray with size (1, n)(a vector) indicating z-c
     def zSubC_(self):
         # Compute zj-cj. If zj - cj >= 0 for all columns then current 
         # solution is optimal solution.
-        w = self.getDual()
+        w = self.getDual()['var']
         z = np.sum(w.dot(self.A_), axis = 0)
         # Leave this for the sake of debug
         return z - self.c_
@@ -90,7 +95,7 @@ class Simplex:
         divide = \
             (tableau[positive_rows, self.n_] / tableau[positive_rows,pivot_col_idx])
         pivot_row_idx = \
-            positive_rows[np.where(divide == divide.min())[0][-1]]
+            positive_rows[np.where(divide == divide.min())[0][0]]
 
         # Update the basis:
         self.basis_[pivot_row_idx] = pivot_col_idx
@@ -123,18 +128,18 @@ class Simplex:
         pivot_col = self.tableau_[:, c]
         return pivot, pivot_col, pivot_row
 
-    def getObj(self):
+    def getPrimal(self):
         # Get the optimal solution:
-        x = np.zeros(self.c_.size)
+        primal_var = np.zeros(self.c_.size)
         b_inv = np.linalg.inv(self.tableau_[:, self.basis_])
-        x[self.basis_] = b_inv.dot(self.tableau_[:, self.n_])
+        primal_var[self.basis_] = b_inv.dot(self.tableau_[:, self.n_])
         # Determine the optimal value:
-        obj = np.sum(self.c_ * x)
-        return x, obj
+        primal_primal = np.sum(self.c_ * primal_var)
+        return {'var': primal_var, 'obj': primal_primal}
 
 if __name__ == "__main__":
 
-    from test_simplex import Q1, Q2, Q3, Q4, Q5
+    from test_simplex import Q1, Q2, Q3, Q4, Q5, Q6
 
     def callBack(xk, **kwargs):
         if kwargs['phase'] == 2:
@@ -149,12 +154,12 @@ if __name__ == "__main__":
         from scipy.optimize import linprog
         ans = linprog(c, A_eq = A, b_eq = b, method = 'simplex', callback = callBack)
         print(ans)
-
-    c, A, b, basis = Q5();
+#Q3
+    c, A, b, basis = Q3();
     printCorrectAns(A, b, c)
     linsov = Simplex(c, A, b, basis)
-    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj(), dual = linsov.getDual())
+    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, primal = linsov.getPrimal(), dual = linsov.getDual())
     while not linsov.isOptimal():
         linsov.updateBasis()
-        pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, obj = linsov.getObj(), dual = linsov.getDual())
+        pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, primal = linsov.getPrimal(), dual = linsov.getDual())
 

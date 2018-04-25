@@ -2,7 +2,7 @@
 
 from cord_descent import cord_descent
 from cuter_util import *
-from linear_solver import standardize, SimplexWrapper
+from linear_solver import standardize
 from simplex import Simplex
 from debug_utils import pause
 
@@ -162,7 +162,7 @@ def initialize_dual_var(adjusted_equatn, b):
 
 
 #def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param):
-#	A_, b_, c_ = standardize(A, b, rho*g, delta, cuter.setup_args_dict['adjusted_equatn'])
+#   A_, b_, c_ = standardize(A, b, rho*g, delta, cuter.setup_args_dict['adjusted_equatn'])
 
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
     """
@@ -183,11 +183,19 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
 
     equatn = cuter.setup_args_dict['adjusted_equatn']
     delta = 10;
-    c_, A_, b_, _ = standardize(g, rho, A, b, 10, equatn)
-    linsov = Simplex(c_, A_, b_, g, rho, equatn)
-    print(g, rho, A, b)
-    linsov.solve()
+    
+    c_, A_, b_, basis_ = standardize(g, rho, A, b, 10, equatn)
+    
+    linsov = Simplex(c_, A_, b_, basis_)
+    
+    #pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, primal = linsov.getPrimal(), dual = linsov.getDual())
+    while not linsov.isOptimal():
+        linsov.updateBasis()
+    #    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, primal = linsov.getPrimal(), dual = linsov.getDual())
 
+    from scipy.optimize import linprog
+    ans = linprog(c_, A_eq = A_, b_eq = b_, method = 'simplex')
+    print(ans)
 
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
@@ -201,9 +209,9 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
                        eig_add_on=dust_param.add_on_hess, verbose=dust_param.sub_verbose)
 
     m, n = A.shape
-    primal = linsov.getPrimalVar()
+    primal = linsov.getPrimal()['var']
     primal = primal[0:n] - primal[n:2*n]
-    pause("sqp_primal: ", d_k.T, "slp_primal: ", primal, "sqp_dual: ", dual_var.T, "slp_dual: ", linsov.getDualVar()[:m], "PrimalObj", linsov.getPrimalObj(), "DualObj", linsov.getDualObj(), "iter_cnt", linsov.getIterCnt())
+    pause("sqp_primal: ", d_k.T, "slp_primal: ", primal, "sqp_dual: ", dual_var.T, "slp_dual: ", linsov.getDual()['var'], "PrimalObj", linsov.getPrimal()['obj'], "DualObj", linsov.getDual()['obj'])
     #pause(dk_real = d_k, real_dual = dual_var, d_k = linsov.getPrimal(), Dual = linsov.getDual(), Obj = linsov.getObj())
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
@@ -279,7 +287,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
             get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
 
-        # Debuging	
+        # Debuging  
         if (np.max(np.abs(d_k)) > delta):
             step_size = ( delta / np.max(np.abs(d_k)) )
             d_k *= step_size

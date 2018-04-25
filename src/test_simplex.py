@@ -82,5 +82,5 @@ def Q6():
     b = np.array([[1], [2]], dtype = np.float64)
     # Define the objective function and the initial basis:
     c = np.array([2, 3, 1, 0, 0])
-    basis = np.array([2, 3, 4])
+    basis = np.array([0, 1])
     return c, A, b, basis
