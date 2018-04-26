@@ -26,7 +26,6 @@ class Simplex:
             self.basis_ = basis
         b_inv = np.linalg.inv(self.A_[:, self.basis_])
         self.tableau_ = b_inv.dot(np.concatenate((A, b), axis=1));
-        print self.tableau_
 
     # Check if the input is legal. Don't worry about it if you
     # are not familiar with numpy's API.
@@ -46,26 +45,24 @@ class Simplex:
             (not basis is None and basis.shape != (m,)):
             raise ValueError("Init failed due to mis-matched input size. Abort.")
 
-    def resetC(c):
+    def resetC(self, c):
         if (self.c_.size == c.size):
             self.c_ = c;
         else:
             print("Reset object function failed due to type or size mis-match.")
 
     # Return dual based on primal solution.
-    def getDual(self):
+    def getDualVar(self):
         cb = np.reshape(self.c_[self.basis_], (1, -1))
         b_inv = np.linalg.inv(self.A_[:, self.basis_])
-        dual_var = cb.dot(b_inv)
-        dual_obj = dual_var.dot(self.b_)
-        return {'var': dual_var, 'obj': dual_obj[0,0]  }
+        return cb.dot(b_inv)
     # input: none
     # return: 
     #       ndarray with size (1, n)(a vector) indicating z-c
     def zSubC_(self):
         # Compute zj-cj. If zj - cj >= 0 for all columns then current 
         # solution is optimal solution.
-        w = self.getDual()['var']
+        w = self.getDualVar()
         z = np.sum(w.dot(self.A_), axis = 0)
         # Leave this for the sake of debug
         return z - self.c_
@@ -128,14 +125,12 @@ class Simplex:
         pivot_col = self.tableau_[:, c]
         return pivot, pivot_col, pivot_row
 
-    def getPrimal(self):
+    def getPrimalVar(self):
         # Get the optimal solution:
         primal_var = np.zeros(self.c_.size)
         b_inv = np.linalg.inv(self.tableau_[:, self.basis_])
         primal_var[self.basis_] = b_inv.dot(self.tableau_[:, self.n_])
-        # Determine the optimal value:
-        primal_primal = np.sum(self.c_ * primal_var)
-        return {'var': primal_var, 'obj': primal_primal}
+        return primal_var
 
 if __name__ == "__main__":
 
