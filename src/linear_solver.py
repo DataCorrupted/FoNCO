@@ -14,10 +14,10 @@ def standardize(g, rho, A, b, delta, equatn):
     #  
     # c = | rho*g, -rho*g, e(1, m), e(1, #eq) |
     m, n = A.shape
-    return makeC_(g, equatn), makeA_(A), makeB_(b, delta, n), makeBasis_(b, n)
+    return makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
 
 
-def makeA_(A):
+def makeA(A):
     m, n = A.shape
     A_ = np.zeros((m+2*n, 2*m+4*n))
     A_[0: m, 0: n] = A.copy();                      # Row1:  A(mxn)
@@ -35,14 +35,14 @@ def makeA_(A):
 
     return A_
 
-def makeB_(b, delta, n):
+def makeB(b, delta, n):
     m = b.shape[0]
     b_ = np.zeros((m+2*n, 1))           
     b_[0:m, :] = -b.copy()              # -b
     b_[m:m+2*n, 0] = delta              # delta
     return b_
 
-def makeC_(g, equatn):
+def makeC(g, equatn):
     n = g.shape[0]
     m = equatn.shape[0]
     c_ = np.zeros((2*m+4*n, 1))
@@ -56,7 +56,7 @@ def makeC_(g, equatn):
     # Transpose as simplex solves prefers c with shape (1, -1)
     return c_.reshape((2*m+4*n,))
 
-def makeBasis_(b, n):
+def makeBasis(b, n):
     m = b.shape[0]
     basis = np.concatenate(                                         \
         (np.arange(2*n, m+2*n),np.arange(2*m+2*n, 2*m+4*n)),                \
@@ -82,7 +82,7 @@ if __name__ == "__main__":
             [-1,  0,  1,  0,    0,  0,    0, 0,    0, 0,    1, 0],
             [ 0, -1,  0,  1,    0,  0,    0, 0,    0, 0,    0, 1],
             ])
-        A_calc = makeA_(A)
+        A_calc = makeA(A)
         assert np.equal(A_calc, A_real).all(), "Got wrong A!"
         print("Got correct A!")
     def testMakeB():
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             [1],
             [1]         
             ])
-        b_calc = makeB_(b, 1, 2)
+        b_calc = makeB(b, 1, 2)
         assert np.equal(b_calc, b_real).all(), "Got wrong b!"
         print("Got correct b!")
     def testMakeC():
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             ])
         equatn = np.array([True, False])
         c_real = np.array([0, 2, 0, -2, 1, 1, 1, 0, 0, 0, 0, 0])
-        c_calc = makeC_(g, equatn)
+        c_calc = makeC(g, equatn)
         assert np.equal(c_calc, c_real).all(), "Got wrong c!"
         print("Got correct c!")
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
             [ 4],
             ])
         basis_real = np.array([6, 5,    8, 9, 10, 11])
-        basis_calc = makeBasis_(b, 2)
+        basis_calc = makeBasis(b, 2)
         assert np.equal(basis_calc, basis_real).all(), "Got wrong basis!"
         print("Got correct basis!")
     print("Running unit tests for matrix maker...")

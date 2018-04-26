@@ -2,7 +2,7 @@
 
 from cord_descent import cord_descent
 from cuter_util import *
-from linear_solver import standardize
+from linear_solver import makeA, makeB, makeC, makeBasis
 from simplex import Simplex
 from debug_utils import pause
 
@@ -161,8 +161,22 @@ def initialize_dual_var(adjusted_equatn, b):
     return dual_var
 
 
-#def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param):
-#   A_, b_, c_ = standardize(A, b, rho*g, delta, cuter.setup_args_dict['adjusted_equatn'])
+def getPrimalObject(primal_var, rho, g, equatn):
+	c = makeC(g*rho, equatn);
+	return primal_var.dot(c);
+
+def getDualObject(A, g, rho, b, dual_var, delta):
+	print A
+	print g
+	print rho
+	print b
+	print dual_var
+	print delta
+	m = b.size
+	## ABS!!!
+	blam = b.T.dot(dual_var)
+	print blam
+	return blam - delta * np.sum(rho * g + dual_var.T.dot(A))
 
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
     """
@@ -184,18 +198,18 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     equatn = cuter.setup_args_dict['adjusted_equatn']
     delta = 10;
     
-    c_, A_, b_, basis_ = standardize(g, rho, A, b, 10, equatn)
+    n = A.shape[1]
+    c_, A_, b_, basis_ = makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
     
     linsov = Simplex(c_, A_, b_, basis_)
     
-    #pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, primal = linsov.getPrimal(), dual = linsov.getDual())
     while not linsov.isOptimal():
         linsov.updateBasis()
-    #    pause(table = linsov.tableau_, zSubC = linsov.zSubC_(), basis = linsov.basis_, primal = linsov.getPrimal(), dual = linsov.getDual())
 
     from scipy.optimize import linprog
     ans = linprog(c_, A_eq = A_, b_eq = b_, method = 'simplex')
     print(ans)
+    rho_ = rho
 
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
@@ -211,8 +225,11 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     m, n = A.shape
     primal = linsov.getPrimal()['var']
     primal = primal[0:n] - primal[n:2*n]
-    pause("sqp_primal: ", d_k.T, "slp_primal: ", primal, "sqp_dual: ", dual_var.T, "slp_dual: ", linsov.getDual()['var'], "PrimalObj", linsov.getPrimal()['obj'], "DualObj", linsov.getDual()['obj'])
-    #pause(dk_real = d_k, real_dual = dual_var, d_k = linsov.getPrimal(), Dual = linsov.getDual(), Obj = linsov.getObj())
+    dual = linsov.getDual()['var']
+    dual = dual[0, 0:m]
+    pause("sqp_primal: ", d_k.T, "slp_primal: ", primal, "sqp_dual: ", dual_var.T, "slp_dual: ", dual)
+    pause("PrimalObj", linsov.getPrimal()['obj'],"primal obj: ", getPrimalObject(linsov.getPrimal()['var'], rho_, g, equatn))
+    pause("DualObj", linsov.getDual()['obj'], "dual obj: ", getDualObject(A, g, rho_, b, dual, delta))
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
 
