@@ -178,8 +178,8 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
             X += (1+dual_var[i]) * np.abs(x_new)
     return 1-np.sqrt(X / l_0)
 def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
-    up = l_0 - getPrimalObject(primal_var, g, 0, equatn)
-    down = l_0 - getDualObject(A, g, 0, b, dual_var, delta)    
+    up = l_0 - getPrimalObject(primal_var, g, rho, equatn)
+    down = l_0 - getDualObject(A, g, rho, b, dual_var, delta)    
     return up/down
 def l0(b, equatn):
     b = b.reshape(1, -1)[0]
@@ -196,7 +196,9 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     ratio_opt = 0;
     ratio_fea = 0;
     l_0 = l0(b, equatn)
+    iter_cnt = 0
     while not linsov.isOptimal():
+        iter_cnt += 1;
         linsov.updateBasis()
 
         primal = linsov.getPrimalVar()
@@ -217,10 +219,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         if ratio_c >= beta_fea and ratio_opt >= beta_opt:
             rho *= theta
             linsov.resetC(makeC(g*rho, equatn))
-        print ratio_opt, ratio_fea, ratio_c
-
-    pause("slp_primal: ", primal_var, "slp_dual: ", dual_var )
-
+    return primal_var.reshape((n, 1)), dual_var, rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
     """
@@ -298,14 +297,13 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     beta_l = 0.6 * dust_param.beta_opt * (1 - dust_param.beta_fea)
     adjusted_equatn = cuter.setup_args_dict['adjusted_equatn']
     zero_d = np.zeros(x_0.shape)
-
     i, status = 0, -1
     x_k = x_0.copy()
 
     logger.info('-' * 200)
     logger.info(
         '''{0:4s} | {1:13s} | {2:12s} | {3:12s} | {4:12s} | {5:12s} | {6:12s} | {7:12s} | {8:12s} | {9:12s} | {10:6s} | {11:12s} | {12:12s} | {13:12s}'''.format(
-            'Itr', 'Delta', 'Step_size', 'Sigma', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'Omega',
+            'Itr', 'KKT', 'Step_size', 'Violation', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'Omega',
             'SubItr', 'Delta_L', 'Merit', "||d||"))
 
     f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
@@ -326,8 +324,9 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
 
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
-            .format(i, 0.75, -1, violation, rho, f, -1, -1, -1, omega, -1, -1, rho * f + violation, -1))
+            .format(i, kkt_error_k, -1, violation, rho, f, -1, -1, -1, omega, -1, -1, rho * f + violation, -1))
 
+    m, n = A.shape
     step_size = -1.0
     H_rho = np.identity(num_var)
     delta = 1; 
@@ -335,18 +334,14 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.
-        dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
-            get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
-
-        # Debuging  
-        if (np.max(np.abs(d_k)) > delta):
-            step_size = ( delta / np.max(np.abs(d_k)) )
-            d_k *= step_size
+        #dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
+        #    get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
+        d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
+            getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
         # 2.3
         l_0_rho_x_k = linear_model_penalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linear_model_penalty(A, b, g, rho, d_k, adjusted_equatn)
         delta_linearized_model = l_0_rho_x_k - l_d_rho_x_k
-
         # 2.2
         l_0_0_x_k = linear_model_penalty(A, b, g, 0, zero_d, adjusted_equatn)
         l_d_0_x_k = linear_model_penalty(A, b, g, 0, d_k, adjusted_equatn)
@@ -355,30 +350,12 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         # Don't know what kke error is yet.
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
         # ratio_opt: 3.6. It's actually r_v in paper.
-        if ratio_opt > 0:
-            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / delta_linearized_model
-            if np.isnan(sigma):
-                # Set it to a very small value to escape inf case.
-                sigma = -0x80000000
-            if sigma < SIGMA:
-                delta *= 0.25
-            elif sigma > DELTA:
-                delta = min(2*delta, MAX_delta)
-            # else delta_k = delta_k+1, which does not change anything.                
-            #fn_eval_cnt += 1 - np.log2(step_size)
-        else:
-            pass
-            #fn_eval_cnt += 
-
-        if sigma > SIGMA and ratio_opt > 0:
-            # Make sure that the inf norm of d_k is delta
-            x_k += d_k
+        x_k += d_k
         # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
             # TODO: Change this update, as we are using linear.
-            rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / \
-                    (g.T.dot(d_k) + 0.5 * d_k.T.dot(H_rho.dot(d_k)))[0, 0]
+            rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / (g.T.dot(d_k))[0, 0]
 
         f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
@@ -393,7 +370,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
 
         logger.info(
             '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
-                .format(i, delta, step_size, sigma, rho, f, ratio_complementary, ratio_fea, ratio_opt, omega,
+                .format(i, kkt_error_k, step_size, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, omega,
                         sub_iter, delta_linearized_model, rho * f + violation, np.linalg.norm(d_k, 2)))
 
         if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
