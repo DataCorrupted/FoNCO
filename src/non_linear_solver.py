@@ -161,22 +161,66 @@ def initialize_dual_var(adjusted_equatn, b):
     return dual_var
 
 
-def getPrimalObject(primal_var, rho, g, equatn):
-	c = makeC(g*rho, equatn);
-	return primal_var.dot(c);
-
+def getPrimalObject(primal_var, g, rho, equatn):
+    return primal_var.dot(makeC(g*rho, equatn));
 def getDualObject(A, g, rho, b, dual_var, delta):
-	print A
-	print g
-	print rho
-	print b
-	print dual_var
-	print delta
-	m = b.size
-	## ABS!!!
-	blam = b.T.dot(dual_var)
-	print blam
-	return blam - delta * np.sum(rho * g + dual_var.T.dot(A))
+    return  \
+        (b.T.dot(dual_var) -  \
+        delta * np.sum(np.abs(rho * g.T + dual_var.T.dot(A))))[0]
+def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
+    X = 0
+    m, n = A.shape
+    for i in range(m):
+        x_new = A[i, :].dot(primal_var) + b[i, 0]
+        if x_new > 0:
+            X += (1-dual_var[i]) * x_new
+        elif x_new < 0 and equatn[i] == True:            
+            X += (1+dual_var[i]) * np.abs(x_new)
+    return 1-np.sqrt(X / l_0)
+def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
+    up = l_0 - getPrimalObject(primal_var, g, 0, equatn)
+    down = l_0 - getDualObject(A, g, 0, b, dual_var, delta)    
+    return up/down
+def l0(b, equatn):
+    b = b.reshape(1, -1)[0]
+    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)])
+
+def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
+    equatn = cuter.setup_args_dict['adjusted_equatn']
+    
+    m, n = A.shape
+    c_, A_, b_, basis_ = makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
+    
+    linsov = Simplex(c_, A_, b_, basis_)
+    
+    ratio_opt = 0;
+    ratio_fea = 0;
+    l_0 = l0(b, equatn)
+    while not linsov.isOptimal():
+        linsov.updateBasis()
+
+        primal = linsov.getPrimalVar()
+        primal_var = primal[0:n] - primal[n:2*n]
+
+        dual_var = -linsov.getDualVar()
+        dual_var = dual_var[0, 0:m]
+
+        ratio_fea = getRatio(A, b, g, 0, primal, dual_var, delta, equatn, l_0)
+        ratio_opt = getRatio(A, b, g, rho, primal, dual_var, delta, equatn, l_0)
+        ratio_c = getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega)
+
+
+        beta_fea = dust_param.beta_fea 
+        beta_opt = dust_param.beta_opt
+        theta = dust_param.theta
+
+        if ratio_c >= beta_fea and ratio_opt >= beta_opt:
+            rho *= theta
+            linsov.resetC(makeC(g*rho, equatn))
+        print ratio_opt, ratio_fea, ratio_c
+
+    pause("slp_primal: ", primal_var, "slp_dual: ", dual_var )
+
 
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
     """
@@ -195,21 +239,6 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     :return:
     """
 
-    equatn = cuter.setup_args_dict['adjusted_equatn']
-    delta = 10;
-    
-    n = A.shape[1]
-    c_, A_, b_, basis_ = makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
-    
-    linsov = Simplex(c_, A_, b_, basis_)
-    
-    while not linsov.isOptimal():
-        linsov.updateBasis()
-
-    from scipy.optimize import linprog
-    ans = linprog(c_, A_eq = A_, b_eq = b_, method = 'simplex')
-    print(ans)
-    rho_ = rho
 
     rescale = dust_param.rescale
     H_f = cuter.get_hessian(x_k, 0, rescale=rescale)
@@ -222,14 +251,19 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
                        dust_param.beta_fea, dust_param.beta_opt, dust_param.theta, dust_param.max_sub_iter,
                        eig_add_on=dust_param.add_on_hess, verbose=dust_param.sub_verbose)
 
-    m, n = A.shape
-    primal = linsov.getPrimal()['var']
-    primal = primal[0:n] - primal[n:2*n]
-    dual = linsov.getDual()['var']
-    dual = dual[0, 0:m]
-    pause("sqp_primal: ", d_k.T, "slp_primal: ", primal, "sqp_dual: ", dual_var.T, "slp_dual: ", dual)
-    pause("PrimalObj", linsov.getPrimal()['obj'],"primal obj: ", getPrimalObject(linsov.getPrimal()['var'], rho_, g, equatn))
-    pause("DualObj", linsov.getDual()['obj'], "dual obj: ", getDualObject(A, g, rho_, b, dual, delta))
+    print "ratios"
+    print ratio_opt, ratio_fea, ratio_complementary
+    print "rho"
+    print rho
+    print "SQP"
+    print "primal_var"
+    print d_k.T
+    print "dual_var"
+    print dual_var.T
+    print "SLP"
+    
+    getLinearSearchDirection(A, b, g, rho, 1, cuter, dust_param, omega)
+
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
 

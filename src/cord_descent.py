@@ -1,7 +1,6 @@
 #!/bin/env python
 import numpy as np
 
-
 def get_inverse_cholesky(H):
     """
     Compute the cholesky decomposition of inverse of H
@@ -198,6 +197,7 @@ def cord_descent(raw_H_0, raw_H_f, rho, g, A, b, equatn, omega, beta_fea, beta_o
     current_fea_x = np.zeros((num_var, 1))
     current_opt_x = np.zeros((num_var, 1))
     j_0_w = get_primal_obj(H_rho, rho, g, A, b, current_opt_x, equatn) + omega
+
     ratio_complementary, ratio_opt, ratio_fea = (0, 0, 0)
 
     if verbose:
