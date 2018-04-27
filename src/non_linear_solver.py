@@ -162,12 +162,17 @@ def initialize_dual_var(adjusted_equatn, b):
 
 
 def getPrimalObject(primal_var, g, rho, equatn):
+    # Line 757, formula 4.1
     return primal_var.dot(makeC(g*rho, equatn));
 def getDualObject(A, g, rho, b, dual_var, delta):
+    # Line 763, formula 4.2
     return  \
         (b.T.dot(dual_var) -  \
         delta * np.sum(np.abs(rho * g.T + dual_var.T.dot(A))))[0]
 def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
+    # line 227: r_c = 1 - sqrt(X/l_0)
+    # line 221: X = sum((1-dual(i)) * v(<a, d> + b)) + sum((1+dual(j)) * v(<a, d> + b))
+    #           where i in E+(d), I+(d), j in I-(d) 
     X = 0
     m, n = A.shape
     for i in range(m):
@@ -178,10 +183,22 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
             X += (1+dual_var[i]) * np.abs(x_new)
     return 1-np.sqrt(X / l_0)
 def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
+    # Line 199, formula 2.16.
+    # When rho is set to 0, it calculates ratio_fea, or it calculates ratio_obj
     up = l_0 - getPrimalObject(primal_var, g, rho, equatn)
-    down = l_0 - getDualObject(A, g, rho, b, dual_var, delta)    
+    down = l_0 - getDualObject(A, g, rho, b, dual_var, delta)
+    print "l0"
+    print l_0
+
+    print "rho"
+    print rho
+    print "primal: "
+    print getPrimalObject(primal_var, g, rho, equatn)
+    print "dual: "
+    print getDualObject(A, g, rho, b, dual_var, delta)
     return up/down
 def l0(b, equatn):
+    # Line 201
     b = b.reshape(1, -1)[0]
     return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)])
 
@@ -191,34 +208,50 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     m, n = A.shape
     c_, A_, b_, basis_ = makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
     
+    # Construct a simplex problem instance.
     linsov = Simplex(c_, A_, b_, basis_)
+
+    beta_fea = dust_param.beta_fea 
+    beta_opt = dust_param.beta_opt
+    theta = dust_param.theta
     
     ratio_opt = 0;
     ratio_fea = 0;
+
     l_0 = l0(b, equatn)
     iter_cnt = 0
     while not linsov.isOptimal():
         iter_cnt += 1;
+        # update the basis.
         linsov.updateBasis()
 
+        # primal has size 4*n + 2*m
+        # but we are only interested with the first 2n, as they are plus and minus of d.
         primal = linsov.getPrimalVar()
+        # primal_var = d+ - d-
         primal_var = primal[0:n] - primal[n:2*n]
 
+        # dual_var also has size m+2n,
+        # but we are only interested with the first m.
         dual_var = -linsov.getDualVar()
         dual_var = dual_var[0, 0:m]
 
+        # Update ratios.
         ratio_fea = getRatio(A, b, g, 0, primal, dual_var, delta, equatn, l_0)
         ratio_opt = getRatio(A, b, g, rho, primal, dual_var, delta, equatn, l_0)
         ratio_c = getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega)
 
+        # Debugging.
+        pause("ratio_fea", ratio_fea, "ratio_opt", ratio_opt, "primal_var", primal_var, "dual_var", dual_var)
 
-        beta_fea = dust_param.beta_fea 
-        beta_opt = dust_param.beta_opt
-        theta = dust_param.theta
-
+        # Update rho if needed.
         if ratio_c >= beta_fea and ratio_opt >= beta_opt:
             rho *= theta
             linsov.resetC(makeC(g*rho, equatn))
+        elif ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
+        # Should all satisfies, break.
+        # We don't do it now.
+            pass
     return primal_var.reshape((n, 1)), dual_var, rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
@@ -506,7 +539,3 @@ def non_linear_solve(cuter, dust_param, logger):
             'kkt_error': kkt_error_k, 'iter_num': i, 'constraint_violation': violation, 'rhos': all_rhos,
             'violations': all_violations, 'fs': all_fs, 'subiters': all_sub_iter, 'kkt_erros': all_kkt_erros,
             'fn_eval_cnt': fn_eval_cnt, 'num_var': H_rho.shape[0], 'num_constr': dual_var.shape[0]}
-
-
-def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
-    return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)

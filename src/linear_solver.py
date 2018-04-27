@@ -18,6 +18,11 @@ def standardize(g, rho, A, b, delta, equatn):
 
 
 def makeA(A):
+    #
+    #     | A(mxn) -A(mxn) -I(mxm) I(mxm)               |   
+    # A = | I(nxn) -I(nxn)                I(nxn)        |
+    #     |-I(nxn)  I(nxn)                       I(nxn) |   
+    #                                                
     m, n = A.shape
     A_ = np.zeros((m+2*n, 2*m+4*n))
     A_[0: m, 0: n] = A.copy();                      # Row1:  A(mxn)
@@ -36,6 +41,9 @@ def makeA(A):
     return A_
 
 def makeB(b, delta, n):
+    #     | -b(m,)     |
+    # b = |  delta(n,) |
+    #     |  delta(n,) |
     m = b.shape[0]
     b_ = np.zeros((m+2*n, 1))           
     b_[0:m, :] = -b.copy()              # -b
@@ -43,6 +51,7 @@ def makeB(b, delta, n):
     return b_
 
 def makeC(g, equatn):
+    # c = | rho*g, -rho*g, e(1, m), e(1, #eq) |
     n = g.shape[0]
     m = equatn.shape[0]
     c_ = np.zeros((2*m+4*n, 1))

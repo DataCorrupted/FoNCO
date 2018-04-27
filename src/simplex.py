@@ -46,6 +46,7 @@ class Simplex:
             raise ValueError("Init failed due to mis-matched input size. Abort.")
 
     def resetC(self, c):
+        # If rho is updated, we need new C.
         if (self.c_.size == c.size):
             self.c_ = c;
         else:
