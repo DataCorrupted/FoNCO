@@ -52,6 +52,11 @@ class Simplex:
         else:
             print("Reset object function failed due to type or size mis-match.")
 
+    def getNuVar(self, c):
+        cb = c[self.basis_]
+        b_inv = np.linalg.inv(self.A_[:, self.basis_])
+        return cb.dot(b_inv)
+
     # Return dual based on primal solution.
     def getDualVar(self):
         cb = np.reshape(self.c_[self.basis_], (1, -1))

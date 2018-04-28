@@ -125,24 +125,6 @@ def linear_model_penalty(A, b, g, rho, d, adjusted_equatn):
     linear_model = g.T.dot(d) * rho + v_x(c, adjusted_equatn)
     return linear_model[0, 0]
 
-
-def get_KKT(A, b, g, eta, rho):
-    """
-    Calcuate KKT error
-    :param A: Jacobian of constraints
-    :param b: c(x) constraint function value
-    :param g: gradient of objective
-    :param eta: multiplier in canonical form dual problem
-    :param rho: penalty paramter rho
-    :return: kkt error
-    """
-
-    err_grad = np.max(np.abs(A.T.dot(eta / rho) + g))
-    err_complement = np.max(np.abs(eta * b))
-
-    return max(err_grad, err_complement)
-
-
 def initialize_dual_var(adjusted_equatn, b):
     """
     Initialize dual variables
@@ -181,21 +163,28 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
             X += (1-dual_var[i]) * x_new
         elif x_new < 0 and equatn[i] == True:            
             X += (1+dual_var[i]) * np.abs(x_new)
-    return 1-np.sqrt(X / l_0)
+    return 1-np.sqrt(X / (l_0 + 1e-8))
 def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
     # Line 199, formula 2.16.
     # When rho is set to 0, it calculates ratio_fea, or it calculates ratio_obj
-    up = l_0 - getPrimalObject(primal_var, g, rho, equatn)
-    down = l_0 - getDualObject(A, g, rho, b, dual_var, delta)
-    print "l0"
+    primal_obj = getPrimalObject(primal_var, g, rho, equatn)
+    dual_obj = getDualObject(A, g, rho, b, dual_var, delta)
+    
+    if rho == 0:
+        # Take the positive part
+        dual_obj = max(0, dual_obj)
+
+    up = l_0 - primal_obj
+    down = l_0 - dual_obj
+    '''print "l0"
     print l_0
 
     print "rho"
     print rho
     print "primal: "
-    print getPrimalObject(primal_var, g, rho, equatn)
+    print primal_obj
     print "dual: "
-    print getDualObject(A, g, rho, b, dual_var, delta)
+    print dual_obj'''
     return up/down
 def l0(b, equatn):
     # Line 201
@@ -235,15 +224,15 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # but we are only interested with the first m.
         dual_var = -linsov.getDualVar()
         dual_var = dual_var[0, 0:m]
+        nu_var = -linsov.getNuVar(makeC(g*0, equatn))
 
         # Update ratios.
-        ratio_fea = getRatio(A, b, g, 0, primal, dual_var, delta, equatn, l_0)
+        ratio_fea = getRatio(A, b, g, 0, primal, nu_var[0:m], delta, equatn, l_0)
         ratio_opt = getRatio(A, b, g, rho, primal, dual_var, delta, equatn, l_0)
         ratio_c = getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega)
 
         # Debugging.
-        pause("ratio_fea", ratio_fea, "ratio_opt", ratio_opt, "primal_var", primal_var, "dual_var", dual_var)
-
+        #pause("ratio_fea", ratio_fea, "ratio_opt", ratio_opt, "primal_var", primal_var, "dual_var", dual_var)
         # Update rho if needed.
         if ratio_c >= beta_fea and ratio_opt >= beta_opt:
             rho *= theta
@@ -251,8 +240,8 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         elif ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
         # Should all satisfies, break.
         # We don't do it now.
-            pass
-    return primal_var.reshape((n, 1)), dual_var, rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
+            break
+    return primal_var.reshape((n, 1)), dual_var.reshape((m, 1)), rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param):
     """
@@ -283,7 +272,7 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
                        dust_param.beta_fea, dust_param.beta_opt, dust_param.theta, dust_param.max_sub_iter,
                        eig_add_on=dust_param.add_on_hess, verbose=dust_param.sub_verbose)
 
-    print "ratios"
+    '''print "ratios"
     print ratio_opt, ratio_fea, ratio_complementary
     print "rho"
     print rho
@@ -292,7 +281,7 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     print d_k.T
     print "dual_var"
     print dual_var.T
-    print "SLP"
+    print "SLP"'''
     
     getLinearSearchDirection(A, b, g, rho, 1, cuter, dust_param, omega)
 
@@ -345,6 +334,25 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     max_iter = dust_param.max_iter
     rescale = dust_param.rescale
 
+    
+    def get_KKT(A, b, g, eta, rho):
+        """
+        Calcuate KKT error
+        :param A: Jacobian of constraints
+        :param b: c(x) constraint function value
+        :param g: gradient of objective
+        :param eta: multiplier in canonical form dual problem
+        :param rho: penalty paramter rho
+        :return: kkt error
+        """
+
+        err_grad = np.max(np.abs(A.T.dot(eta/rho) + g))    
+        err_complement = np.max(np.abs(eta * b))
+        print A.T.dot(eta/rho) + g
+        #print g * rho
+        return max(err_grad, err_complement)
+
+
     # Initialize dual variables
     dual_var = initialize_dual_var(adjusted_equatn, b)
     lam = initialize_dual_var(adjusted_equatn, b)
@@ -363,7 +371,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     step_size = -1.0
     H_rho = np.identity(num_var)
     delta = 1; 
-    MAX_delta = 64;
+
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.
@@ -410,7 +418,8 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
             status = 1
             break
         i += 1
-
+    print dual_var
+    print rho
     logger.info('-' * 200)
 
     if rescale:
