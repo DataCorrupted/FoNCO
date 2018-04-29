@@ -8,7 +8,7 @@ import pickle
 import time
 
 from cuter_util import Cuter
-from non_linear_solver import non_linear_solve, DustParam, non_linear_solve_trust_region
+from non_linear_solver import DustParam, non_linear_solve_trust_region
 
 np.set_printoptions(precision = 2, linewidth = 200)
 def get_logger(log_dir, log_file, logLevel=logging.DEBUG):
@@ -146,7 +146,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     skip_list = ['HS93', 'HS99EXP', 'HS114', 'HS68', 'HS116', 'HS83', 'HS13', 'HS84', 'HS85', 'HS87', 'HS106']
     problem_list = os.listdir(sif_dir_root)
     # Debuging.
-    problem_list = ['HS34']
+    problem_list = ['HS14']
     for problem_name in problem_list:
         if problem_name.startswith("HS") and problem_name not in skip_list:
             if problem_name == 'HS19':
