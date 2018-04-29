@@ -113,8 +113,11 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     beta_opt = dust_param.beta_opt
     theta = dust_param.theta
     
+    dual_var = np.zeros(m)
+    primal_var = np.zeros(n)
     ratio_opt = 0;
     ratio_fea = 0;
+    ratio_c = 0
 
     l_0 = l0(b, equatn)
     iter_cnt = 0
@@ -131,8 +134,8 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
 
         # dual_var also has size m+2n,
         # but we are only interested with the first m.
-        dual_var = -linsov.getDualVar()
-        dual_var = dual_var[0, 0:m]
+        dual = -linsov.getDualVar()
+        dual_var = dual[0, 0:m]
         nu_var = -linsov.getNuVar(makeC(g*0, equatn))
 
         # Update ratios.
@@ -188,7 +191,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         :return: kkt error
         """
 
-        err_grad = np.max(np.abs(A.T.dot(eta/rho) + g))    
+        err_grad = np.max(np.abs(A.T.dot(eta) + g * rho))    
         err_complement = np.max(np.abs(eta * b))
         #print A.T.dot(eta/rho) + g
         #print g * rho
@@ -210,6 +213,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             'SubItr', 'Delta_L', 'Merit', "||d||"))
 
     f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
+    print np.sum(np.abs(g))
     m, n = A.shape
     rho = dust_param.init_rho
     omega = dust_param.init_omega
@@ -233,7 +237,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
 
     step_size = -1.0
-    delta = 1; 
+    delta = 0.01; 
 
     while i < max_iter:
 

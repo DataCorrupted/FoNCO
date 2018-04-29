@@ -52,16 +52,23 @@ class Simplex:
         else:
             print("Reset object function failed due to type or size mis-match.")
 
+    def getBInv_(self):
+        try:
+            return np.linalg.inv(self.A_[:, self.basis_])
+        except:
+            print self.A_
+            print self.basis_
+            print self.A_[:, self.basis_]
+            return np.eye(self.A_.shape[0])
+            
     def getNuVar(self, c):
         cb = c[self.basis_]
-        b_inv = np.linalg.inv(self.A_[:, self.basis_])
-        return cb.dot(b_inv)
+        return cb.dot(self.getBInv_())
 
     # Return dual based on primal solution.
     def getDualVar(self):
         cb = np.reshape(self.c_[self.basis_], (1, -1))
-        b_inv = np.linalg.inv(self.A_[:, self.basis_])
-        return cb.dot(b_inv)
+        return cb.dot(self.getBInv_())
     # input: none
     # return: 
     #       ndarray with size (1, n)(a vector) indicating z-c
