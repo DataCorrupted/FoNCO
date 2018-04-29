@@ -8,10 +8,9 @@ import pickle
 import time
 
 from cuter_util import Cuter
-from linear_solver import DustParam, linearSolveTrustRegion
+from non_linear_solver import non_linear_solve, DustParam
 
 
-np.set_printoptions(precision = 2, linewidth = 200)
 def get_logger(log_dir, log_file, logLevel=logging.DEBUG):
     """
     Create an logging instance with log stored under `log_dir`/`log_file`
@@ -47,7 +46,7 @@ def print_problem_statement(setup_args_dict, logger):
     nlow = np.sum(bl_flag)
     nup = np.sum(bu_flag)
     obj_scale = setup_args_dict['obj_scale']
-    #if setup_args_dict['n'][0] == 2 :
+
     str_format = '| Var #:{0:6d} | Con #:{1:6d} | Eq #:{2:6d} | Low_bound #:{3:6d} | Up_bound #:{4:6d} | Obj_scale: {5:+.5e}' \
         .format(setup_args_dict['n'][0], setup_args_dict['m'][0], num_eq, nlow, nup, obj_scale)
 
@@ -100,9 +99,8 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
     :param result_dir: result directory to store the output
     :return: dust output
     """
-    global success_cnt
     logger = get_logger(log_dir, '{0}.log'.format(problem_name))
-    #logger.info('+' * 200)
+    logger.info('+' * 200)
     with Cuter(os.path.join(sif_dir_root, problem_name)) as cuter:
         try:
             logger.info("Problem name: {0}".format(problem_name))
@@ -110,13 +108,13 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
             logger.info('-' * 200)
             init_param_dict = {'Omega': dust_param.init_omega, 'Rho': dust_param.init_rho,
                                'Beta_opt': dust_param.beta_opt,
-                               'Beta_feasibility': dust_param.beta_fea,
-                               'Delta': dust_param.init_delta, 'Theta': dust_param.theta,
+                               'Beta_feasibility': dust_param.beta_fea, 'Hessian add-on': dust_param.add_on_hess,
+                               'Line search theta': dust_param.line_theta, 'Theta': dust_param.theta,
                                'Omega shrink': dust_param.omega_shrink, 'Max sub iteration': dust_param.max_sub_iter,
                                'Eps opt': dust_param.eps_opt}
             print_param_dict(init_param_dict, logger)
             start_time = time.time()
-            dust_output = linearSolveTrustRegion(cuter, dust_param, logger)
+            dust_output = non_linear_solve(cuter, dust_param, logger)
             execution_time = time.time() - start_time
             dust_output['problem_name'] = problem_name
             dust_output['execution_time'] = execution_time
@@ -128,7 +126,6 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                  ('Number Fn', dust_output['fn_eval_cnt'])])
             print_param_dict(output_print_dict, logger)
             save_output(result_dir, dust_output)
-            success_cnt += (dust_output['status'] == 1)
         except Exception as e:
             logger.error(e)
             logger.error('End of problem: {0}'.format(problem_name))
@@ -144,15 +141,23 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     :param result_dir: result directory to store the output
     :return:
     """
+    skip_list = ['HS93', 'HS99EXP', 'HS114', 'HS68', 'HS116', 'HS83', 'HS13', 'HS84', 'HS85', 'HS87', 'HS106']
     problem_list = os.listdir(sif_dir_root)
-    global total_cnt;
-    total_cnt = len(problem_list)
-    # Debuging.
     problem_list = ['HS54']
-    # problem_list = ['HS69']
+    skip_list = []
     for problem_name in problem_list:
-        if problem_name.startswith("HS"):
-        	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
+        if problem_name.startswith("HS") and problem_name not in skip_list:
+            if problem_name == 'HS19':
+                dust_param = DustParam(max_sub_iter=1e4)
+                nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
+            elif problem_name == 'HS75':
+                # Problem HS75's Hessian's scale is on 1e-4, if add_on is on 1e-4, this changes the Hessian strucutre
+                # dramatically, tune down the add_on to be 1e-8
+                dust_param = DustParam(add_on_hess=1e-8)
+                nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
+            else:
+                dust_param = DustParam()
+                nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
 
 
 if __name__ == '__main__':
@@ -164,7 +169,7 @@ if __name__ == '__main__':
     log_dir = './logs/logs_0'
     result_dir = './results/results_64'
     # all_tests(sif_dir_root, log_dir, result_dir)
-    dust_param = DustParam(max_sub_iter=100, max_iter = 200)
+    dust_param = DustParam(max_sub_iter=100)
     all_tests(sif_dir_root, log_dir, result_dir)
     print success_cnt
     print total_cnt
