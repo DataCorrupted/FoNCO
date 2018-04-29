@@ -49,66 +49,7 @@ def v_x(c, adjusted_equatn):
 
     return equality_violation + inequality_violation
 
-
-def get_phi(x, rho, cuter, rescale):
-    """
-    Evaluate merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
-    :param x: current x
-    :param rho: penalty parameter
-    :param cuter instance
-    :param rescale: if true, solve the rescale problem
-    :return: phi(x, rho) = rho * f(x) + dist(c(x) | C)
-    """
-    f, _ = cuter.get_f_g(x, grad_flag=False, rescale=rescale)
-    c, _ = cuter.get_constr_f_g(x, grad_flag=False, rescale=rescale)
-
-    return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
-def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
-    """
-    Line search on merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
-    :param x_k: current x
-    :param d_k: search direction
-    :param rho_k: current penalty parameter
-    :param delta_linearized_model: l(0, rho_k; x_k) - l(d_k, rho_k; x_k) delta of linearized model
-    :param line_theta: line search theta parameter
-    :param cuter instance
-    :param rescale: if true, solve the rescale problem
-    :return: step size
-    """
-
-    alpha = 1.0
-
-    phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
-    phi_d_0 = get_phi(x_k, rho_k, cuter, rescale)
-
-    while np.isnan(phi_d_alpha) or phi_d_alpha - phi_d_0 > - line_theta * alpha * delta_linearized_model:
-        alpha /= 2
-        phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
-        if alpha < STEP_SIZE_MIN:
-            return alpha
-
-    return alpha
-
-
-def get_constraint_violation(c, adjusted_equatn):
-    """
-    Get constraint violation in canonical form
-    :param c: constraint value at x_k
-    :param adjusted_equatn: boolean vector indicating if it is equation constraint
-    :return: dist(c(x) | C)
-    """
-
-    equality_value = c[adjusted_equatn]
-    if equality_value.shape[0] == 0:
-        equality_violation = 0
-    else:
-        equality_violation = np.max(equality_value)
-    inequality_violation = np.max(c[np.logical_and(np.logical_not(adjusted_equatn), (c > 0).flatten())])
-
-    return max(equality_violation, inequality_violation)
-
-
-def linear_model_penalty(A, b, g, rho, d, adjusted_equatn):
+def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
     """
     Calculate the l(d, rho; x) defined in the paper which is the linearized model of penalty function
     rho*f(x) + dist(c(x) | C)
@@ -283,8 +224,6 @@ def get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_pa
     print dual_var.T
     print "SLP"'''
     
-    getLinearSearchDirection(A, b, g, rho, 1, cuter, dust_param, omega)
-
     return dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho
 
 
@@ -302,7 +241,7 @@ def get_f_g_A_b_violation(x_k, cuter, dust_param):
 
     return f, g, b, A, violation
 
-def non_linear_solve_trust_region(cuter, dust_param, logger):
+def linearSolveTrustRegion(cuter, dust_param, logger):
     """
     Non linear solver for cuter problems
     :param cuter instance
@@ -353,6 +292,7 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
         return max(err_grad, err_complement)
 
 
+    # Only required for SQP
     # Initialize dual variables
     dual_var = initialize_dual_var(adjusted_equatn, b)
     lam = initialize_dual_var(adjusted_equatn, b)
@@ -375,17 +315,17 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.
-        dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
-            get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
-        #d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
-        #    getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
+        #dual_var, d_k, lam, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter, H_rho = \
+        #    get_search_direction(x_k, dual_var, lam, rho, omega, A, b, g, cuter, dust_param)
+        d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
+            getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
         # 2.3
-        l_0_rho_x_k = linear_model_penalty(A, b, g, rho, zero_d, adjusted_equatn)
-        l_d_rho_x_k = linear_model_penalty(A, b, g, rho, d_k, adjusted_equatn)
+        l_0_rho_x_k = linearModelPenalty(A, b, g, rho, zero_d, adjusted_equatn)
+        l_d_rho_x_k = linearModelPenalty(A, b, g, rho, d_k, adjusted_equatn)
         delta_linearized_model = l_0_rho_x_k - l_d_rho_x_k
         # 2.2
-        l_0_0_x_k = linear_model_penalty(A, b, g, 0, zero_d, adjusted_equatn)
-        l_d_0_x_k = linear_model_penalty(A, b, g, 0, d_k, adjusted_equatn)
+        l_0_0_x_k = linearModelPenalty(A, b, g, 0, zero_d, adjusted_equatn)
+        l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
         
         # Don't know what kke error is yet.
@@ -418,8 +358,6 @@ def non_linear_solve_trust_region(cuter, dust_param, logger):
             status = 1
             break
         i += 1
-    print dual_var
-    print rho
     logger.info('-' * 200)
 
     if rescale:
