@@ -16,7 +16,6 @@ class DustParam:
         self.init_rho = init_rho
         self.init_omega = init_omega
         self.max_iter = max_iter
-        self.max_iter = max_iter
         self.max_sub_iter = max_sub_iter
         self.beta_opt = beta_opt
         self.beta_fea = beta_fea
@@ -123,6 +122,8 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     iter_cnt = 0
     while not linsov.isOptimal():
         iter_cnt += 1;
+        if iter_cnt > dust_param.max_iter:
+        	break;
         # update the basis.
         linsov.updateBasis()
 

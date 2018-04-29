@@ -56,9 +56,9 @@ class Simplex:
         try:
             return np.linalg.inv(self.A_[:, self.basis_])
         except:
-            print self.A_
-            print self.basis_
-            print self.A_[:, self.basis_]
+#            print self.A_
+#            print self.basis_
+#            print self.A_[:, self.basis_]
             return np.eye(self.A_.shape[0])
             
     def getNuVar(self, c):
