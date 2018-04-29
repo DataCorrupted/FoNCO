@@ -147,13 +147,13 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # Debugging.
         #pause("ratio_fea", ratio_fea, "ratio_opt", ratio_opt, "ratio_c", ratio_c,"primal_var", primal_var, "dual_var", dual_var)
         # Update rho if needed.
-        if ratio_c >= beta_fea and ratio_opt >= beta_opt:
-            rho *= theta
-            linsov.resetC(makeC(g*rho, equatn))
-        elif ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
+        if ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
         # Should all satisfies, break.
         # We don't do it now.
             break
+        elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
+            rho *= theta
+            linsov.resetC(makeC(g*rho, equatn))
     return primal_var.reshape((n, 1)), dual_var.reshape((m, 1)), rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_f_g_A_b_violation(x_k, cuter, dust_param):
@@ -192,7 +192,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         :return: kkt error
         """
 
-        err_grad = np.max(np.abs(A.T.dot(eta) + g * rho))    
+        err_grad = np.max(np.abs(A.T.dot(eta/rho) + g))    
         err_complement = np.max(np.abs(eta * b))
         #print A.T.dot(eta/rho) + g
         #print g * rho
@@ -238,7 +238,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
 
     step_size = -1.0
-    delta = 0.01; 
+    delta = 0.1; 
 
     while i < max_iter:
 
