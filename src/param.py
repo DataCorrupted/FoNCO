@@ -7,23 +7,23 @@ class DustParam:
 
         # Setup default ones.
         # I didn't use default value so that I can see clearer.
-        self. init_rho = 1;
-        self. init_omega = 1e-2;
-        self. max_iter = 200;
-        self. max_sub_iter = 2000;
-        self. beta_opt = 0.7;
-        self. beta_fea = 0.;
-        self. theta = 0.9;
-        self. line_theta =  1e-4;
-        self. omega_shrink = 0.7;
-        self. eps_opt = 1e-4;
-        self. eps_violation = 1e-5;
-        self. sub_verbose = False;
-        self. rescale = True;
-        self. SIGMA = 0.3;
-        self. DELTA = 0.75;
-        self. MIN_delta = 1e-5;
-        self. MAX_delta = 64;
+        self.init_rho = 1;
+        self.init_omega = 1e-2;
+        self.max_iter = 200;
+        self.max_sub_iter = 100;
+        self.beta_opt = 0.7;
+        self.beta_fea = 0.;
+        self.theta = 0.9;
+        self.line_theta =  1e-4;
+        self.omega_shrink = 0.7;
+        self.eps_opt = 1e-4;
+        self.eps_violation = 1e-5;
+        self.sub_verbose = False;
+        self.rescale = True;
+        self.SIGMA = 0.3;
+        self.DELTA = 0.75;
+        self.MIN_delta = 1e-5;
+        self.MAX_delta = 64;
 
         # Take in user's request.
         if 'init_rho' in kwarg:         self.init_rho = kwarg['init_rho'];

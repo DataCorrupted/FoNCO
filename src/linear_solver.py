@@ -125,7 +125,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     iter_cnt = 0
     while not linsov.isOptimal():
         iter_cnt += 1;
-        if iter_cnt > dust_param.max_iter:
+        if iter_cnt > dust_param.max_sub_iter:
             break;
         # update the basis.
         linsov.updateBasis()
@@ -197,6 +197,8 @@ def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter
         if alpha < STEP_SIZE_MIN:
             return alpha
 
+    ## TODO:
+    # may be double alpha when necessary.
     return alpha
 
 def linearSolveTrustRegion(cuter, dust_param, logger):
@@ -282,6 +284,9 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         # Don't know what kke error is yet.
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
+#        if np.all(d_k - 1e-10 <= 0) and (kkt_error_k > 1e-4 or violation > 1e-4):
+#            d_k = np.random.rand(d_k.shape[0], d_k.shape[1])
+
         if ratio_opt > 0:
             sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / delta_linearized_model
             if np.isnan(sigma):
@@ -293,7 +298,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 delta = min(2*delta, dust_param.MAX_delta)
         else:
             pass
-
         #print sigma
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
@@ -309,6 +313,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
         f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+
         omega *= dust_param.omega_shrink
 
         # Store iteration information
@@ -323,7 +328,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 .format(i, kkt_error_k, delta, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, step_size,
                         sub_iter, delta_linearized_model, rho * f + violation, np.linalg.norm(d_k, 2)))
 
-        #pause(d_k, x_k, step_size)
+        pause(d_k, x_k)
         if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
             status = 1
             break

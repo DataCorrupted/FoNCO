@@ -27,6 +27,9 @@ class Simplex:
         b_inv = np.linalg.inv(self.A_[:, self.basis_])
         self.tableau_ = b_inv.dot(np.concatenate((A, b), axis=1));
 
+        print self.tableau_
+        print self.zSubC_()
+
     # Check if the input is legal. Don't worry about it if you
     # are not familiar with numpy's API.
     def inputCheck_(self, c, A, b, basis):

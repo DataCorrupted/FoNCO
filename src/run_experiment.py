@@ -132,7 +132,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                 success_cnt += 1
                 success_list.append(problem_name)
             else:
-                #pause()
+                pause()
                 pass
         except Exception as e:
             print e
@@ -152,8 +152,9 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     problem_list = os.listdir(sif_dir_root)
     global total_cnt;
     # Debuging.
-    #problem_list = ['HS49']
-    skip_list = ['HS69', 'HS112', 'HS81']
+    problem_list = ['HS88']
+    #skip_list = ['HS69', 'HS112', 'HS81']
+    skip_list = []
     total_cnt = len(problem_list)
     for problem_name in problem_list[:]:
         if problem_name.startswith("HS") and problem_name not in skip_list:
@@ -171,7 +172,7 @@ if __name__ == '__main__':
     log_dir = './logs/logs_0'
     result_dir = './results/results_64'
     # all_tests(sif_dir_root, log_dir, result_dir)
-    dust_param = DustParam(max_sub_iter=100, max_iter = 200)
+    dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
     print success_cnt
     print total_cnt
