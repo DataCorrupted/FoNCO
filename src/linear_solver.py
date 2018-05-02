@@ -110,6 +110,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     
     # Construct a simplex problem instance.
     linsov = Simplex(c_, A_, b_, basis_)
+    primal = linsov.getPrimalVar()
 
     beta_fea = dust_param.beta_fea 
     beta_opt = dust_param.beta_opt
@@ -117,8 +118,8 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     
     dual_var = np.zeros(m)
     primal_var = np.zeros(n)
-    ratio_opt = 0;
-    ratio_fea = 0;
+    ratio_opt = 1;
+    ratio_fea = 1;
     ratio_c = 0
 
     l_0 = l0(b, equatn)
@@ -149,14 +150,16 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
 
         # Debugging.
         #pause("ratio_fea", ratio_fea, "ratio_opt", ratio_opt, "ratio_c", ratio_c,"primal_var", primal_var, "dual_var", dual_var)
-        # Update rho if needed.
-        if ratio_c >= beta_fea and ratio_opt >= beta_opt:
-            rho *= theta
-            linsov.resetC(makeC(g*rho, equatn))
-        elif ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
+        if ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
         # Should all satisfies, break.
         # We don't do it now.
             break
+        elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
+        # Update rho if needed.
+            rho *= theta
+            linsov.resetC(makeC(g*rho, equatn))
+
+    #print getPrimalObject(primal, g, rho, equatn)
     return primal_var.reshape((n, 1)), dual_var.reshape((m, 1)), rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_f_g_A_b_violation(x_k, cuter, dust_param):
@@ -328,7 +331,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 .format(i, kkt_error_k, delta, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, step_size,
                         sub_iter, delta_linearized_model, rho * f + violation, np.linalg.norm(d_k, 2)))
 
-        pause(d_k, x_k)
+#        pause(d_k, x_k)
         if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
             status = 1
             break
