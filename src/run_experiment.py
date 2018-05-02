@@ -8,7 +8,8 @@ import pickle
 import time
 
 from cuter_util import Cuter
-from linear_solver import DustParam, linearSolveTrustRegion
+from linear_solver import linearSolveTrustRegion
+from param import DustParam
 from debug_utils import pause
 
 np.set_printoptions(precision = 2, linewidth = 200)
@@ -111,7 +112,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
             init_param_dict = {'Omega': dust_param.init_omega, 'Rho': dust_param.init_rho,
                                'Beta_opt': dust_param.beta_opt,
                                'Beta_feasibility': dust_param.beta_fea,
-                               'Delta': dust_param.init_delta, 'Theta': dust_param.theta,
+                               'Theta': dust_param.theta,
                                'Omega shrink': dust_param.omega_shrink, 'Max sub iteration': dust_param.max_sub_iter,
                                'Eps opt': dust_param.eps_opt}
             print_param_dict(init_param_dict, logger)
@@ -134,7 +135,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                 #pause()
                 pass
         except Exception as e:
-            logger.error(e)
+            print e
             logger.error('End of problem: {0}'.format(problem_name))
 
     logger.info('+' * 200)
