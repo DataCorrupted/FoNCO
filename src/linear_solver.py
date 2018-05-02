@@ -359,7 +359,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
             #print step_size
-        if ratio_opt > 0:
+        if ratio_opt > 0 and step_size > STEP_SIZE_MIN:
             x_k += d_k
         # PSST
         if delta_linearized_model_0 > 0 and \
