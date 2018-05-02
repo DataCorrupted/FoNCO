@@ -5,7 +5,7 @@ from solver_util import makeA, makeB, makeC, makeBasis
 from simplex import Simplex
 from debug_utils import pause
 
-SIGMA = 0.25
+SIGMA = 0.3
 DELTA = 0.75
 MIN_delta = 1e-5
 MAX_delta = 64
@@ -316,7 +316,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 # Set it to a very small value to escape inf case.
                 sigma = -0x80000000
             if sigma < SIGMA:
-                delta = max(0.25*delta, MIN_delta)
+                delta = max(0.5*delta, MIN_delta)
             elif sigma > DELTA:
                 delta = min(2*delta, MAX_delta)
         else:
@@ -328,7 +328,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
             #print step_size
-            x_k += d_k
+            x_k += d_k * step_size
         # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
@@ -351,7 +351,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 .format(i, kkt_error_k, delta, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, step_size,
                         sub_iter, delta_linearized_model, rho * f + violation, np.linalg.norm(d_k, 2)))
 
-        #pause(d_k, x_k)
+        #pause(d_k, x_k, step_size)
         if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
             status = 1
             break

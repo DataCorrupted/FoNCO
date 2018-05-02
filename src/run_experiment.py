@@ -9,7 +9,7 @@ import time
 
 from cuter_util import Cuter
 from linear_solver import DustParam, linearSolveTrustRegion
-
+from debug_utils import pause
 
 np.set_printoptions(precision = 2, linewidth = 200)
 def get_logger(log_dir, log_file, logLevel=logging.DEBUG):
@@ -127,8 +127,12 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                  ('Constraint violation', dust_output['constraint_violation']), ('Execute Time (s)', execution_time)])
             print_param_dict(output_print_dict, logger)
             save_output(result_dir, dust_output)
-            success_cnt += (dust_output['status'] == 1)
-            success_list.append(problem_name)
+            if dust_output['status'] == 1:
+                success_cnt += 1
+                success_list.append(problem_name)
+            else:
+                #pause()
+                pass
         except Exception as e:
             logger.error(e)
             logger.error('End of problem: {0}'.format(problem_name))
@@ -146,10 +150,10 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     """
     problem_list = os.listdir(sif_dir_root)
     global total_cnt;
-    total_cnt = len(problem_list)
     # Debuging.
-    #problem_list = ['HS52']
+    #problem_list = ['HS49']
     skip_list = ['HS69', 'HS112', 'HS81']
+    total_cnt = len(problem_list)
     for problem_name in problem_list[:]:
         if problem_name.startswith("HS") and problem_name not in skip_list:
         	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
