@@ -116,10 +116,6 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0, echo = Fals
 
     up = l_0 - primal_obj
     down = (l_0 - dual_obj)
-
-    if np.abs(up) < 1e-5 and np.abs(down) < 1e-5:
-        return 1
-
     down += 1e-5
     if False:
         print g * rho
@@ -359,7 +355,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
             #print step_size
-        if ratio_opt > 0:
             x_k += d_k
         # PSST
         if delta_linearized_model_0 > 0 and \
