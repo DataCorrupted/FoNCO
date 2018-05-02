@@ -22,7 +22,7 @@ class DustParam:
         self.rescale = True;
         self.SIGMA = 0.3;
         self.DELTA = 0.75;
-        self.MIN_delta = 1e-3;
+        self.MIN_delta = 1e-5;
         self.MAX_delta = 64;
 
         # Take in user's request.
