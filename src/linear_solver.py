@@ -49,6 +49,23 @@ def v_x(c, adjusted_equatn):
 
     return equality_violation + inequality_violation
 
+def get_phi(x, rho, cuter, rescale):
+    """
+    Evaluate merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
+    :param x: current x
+    :param rho: penalty parameter
+    :param cuter instance
+    :param rescale: if true, solve the rescale problem
+    :return: phi(x, rho) = rho * f(x) + dist(c(x) | C)
+    """
+    f, _ = cuter.get_f_g(x, grad_flag=False, rescale=rescale)
+    c, _ = cuter.get_constr_f_g(x, grad_flag=False, rescale=rescale)
+
+    return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
+
+def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
+    return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
+
 def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
     """
     Calculate the l(d, rho; x) defined in the paper which is the linearized model of penalty function
