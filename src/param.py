@@ -3,24 +3,43 @@ class DustParam:
     Store all the dust linear solver parameters
     """
 
-    def __init__(self, init_rho=1, init_omega=1e-2, max_iter=200, max_sub_iter=2000, beta_opt=0.7, beta_fea=0.1,
-                 theta=0.9, line_theta= 1e-4, omega_shrink=0.7, eps_opt=1e-4, eps_violation=1e-5,
-                 sub_verbose=False, rescale=True, SIGMA = 0.3, DELTA = 0.75, 
-                 MIN_delta = 1e-5, MAX_delta = 64):
-        self.init_rho = init_rho
-        self.init_omega = init_omega
-        self.max_iter = max_iter
-        self.max_sub_iter = max_sub_iter
-        self.beta_opt = beta_opt
-        self.beta_fea = beta_fea
-        self.theta = theta
-        self.line_theta = line_theta
-        self.omega_shrink = omega_shrink
-        self.eps_opt = eps_opt
-        self.eps_violation = eps_violation
-        self.sub_verbose = sub_verbose
-        self.rescale = rescale
-        self.SIGMA = SIGMA
-        self.DELTA = DELTA
-        self.MIN_delta = MIN_delta
-        self.MAX_delta = MAX_delta
+    def __init__(self, **kwarg):
+
+        # Setup default ones.
+        # I didn't use default value so that I can see clearer.
+        self. init_rho = 1;
+        self. init_omega = 1e-2;
+        self. max_iter = 200;
+        self. max_sub_iter = 2000;
+        self. beta_opt = 0.7;
+        self. beta_fea = 0.;
+        self. theta = 0.9;
+        self. line_theta =  1e-4;
+        self. omega_shrink = 0.7;
+        self. eps_opt = 1e-4;
+        self. eps_violation = 1e-5;
+        self. sub_verbose = False;
+        self. rescale = True;
+        self. SIGMA = 0.3;
+        self. DELTA = 0.75;
+        self. MIN_delta = 1e-5;
+        self. MAX_delta = 64;
+
+        # Take in user's request.
+        if 'init_rho' in kwarg:         self.init_rho = kwarg['init_rho'];
+        if 'init_omega' in kwarg:       self.init_omega = kwarg['init_omega'];
+        if 'max_iter' in kwarg:         self.max_iter = kwarg['max_iter'];
+        if 'max_sub_iter' in kwarg:     self.max_sub_iter = kwarg['max_sub_iter'];
+        if 'beta_opt' in kwarg:         self.beta_opt = kwarg['beta_opt'];
+        if 'beta_fea' in kwarg:         self.beta_fea = kwarg['beta_fea'];
+        if 'theta' in kwarg:            self.theta = kwarg['theta'];
+        if 'line_theta' in kwarg:       self.line_theta = kwarg['line_theta'];
+        if 'omega_shrink' in kwarg:     self.omega_shrink = kwarg['omega_shrink'];
+        if 'eps_opt' in kwarg:          self.eps_opt = kwarg['eps_opt'];
+        if 'eps_violation' in kwarg:    self.eps_violation = kwarg['eps_violation'];
+        if 'sub_verbose' in kwarg:      self.sub_verbose = kwarg['sub_verbose'];
+        if 'rescale' in kwarg:          self.rescale = kwarg['rescale'];
+        if 'SIGMA' in kwarg:            self.SIGMA = kwarg['SIGMA'];
+        if 'DELTA' in kwarg:            self.DELTA = kwarg['DELTA'];
+        if 'MIN_delta' in kwarg:        self.MIN_delta = kwarg['MIN_delta'];
+        if 'MAX_delta' in kwarg:        self.MAX_delta = kwarg['MAX_delta'];
