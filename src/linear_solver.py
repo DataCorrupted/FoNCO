@@ -7,7 +7,7 @@ from debug_utils import pause
 
 SIGMA = 0.25
 DELTA = 0.75
-MIN_delta = 1e-5
+MIN_delta = 1e-2
 MAX_delta = 64
 STEP_SIZE_MIN = 1e-10
 
@@ -49,23 +49,6 @@ def v_x(c, adjusted_equatn):
 
     return equality_violation + inequality_violation
 
-def get_phi(x, rho, cuter, rescale):
-    """
-    Evaluate merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
-    :param x: current x
-    :param rho: penalty parameter
-    :param cuter instance
-    :param rescale: if true, solve the rescale problem
-    :return: phi(x, rho) = rho * f(x) + dist(c(x) | C)
-    """
-    f, _ = cuter.get_f_g(x, grad_flag=False, rescale=rescale)
-    c, _ = cuter.get_constr_f_g(x, grad_flag=False, rescale=rescale)
-
-    return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
-
-def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
-    return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
-
 def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
     """
     Calculate the l(d, rho; x) defined in the paper which is the linearized model of penalty function
@@ -104,7 +87,7 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
         elif x_new < 0 and equatn[i] == True:            
             X += (1+dual_var[i]) * np.abs(x_new)
     return 1-np.sqrt(X / (l_0 + 1e-8))
-def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0, echo = False):
+def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
     # Line 199, formula 2.16.
     # When rho is set to 0, it calculates ratio_fea, or it calculates ratio_obj
     primal_obj = getPrimalObject(primal_var, g, rho, equatn)
@@ -115,19 +98,7 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0, echo = Fals
         dual_obj = max(0, dual_obj)
 
     up = l_0 - primal_obj
-    down = (l_0 - dual_obj)
-
-    if np.abs(up) < 1e-5 and np.abs(down) < 1e-5:
-        return 1
-
-    down += 1e-5
-    if False:
-        print g * rho
-        print l_0, primal_obj, dual_obj
-
-        print primal_var
-        print makeC(g*rho, equatn);
-
+    down = (l_0 - dual_obj) + 1e-5
     return up/down
 def l0(b, equatn):
     # Line 201
@@ -158,7 +129,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     while not linsov.isOptimal():
         iter_cnt += 1;
         if iter_cnt > dust_param.max_iter:
-        	break;
+            break;
         # update the basis.
         linsov.updateBasis()
 
@@ -182,14 +153,13 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # Debugging.
         #pause("ratio_fea", ratio_fea, "ratio_opt", ratio_opt, "ratio_c", ratio_c,"primal_var", primal_var, "dual_var", dual_var)
         # Update rho if needed.
-        if ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
+        if ratio_c >= beta_fea and ratio_opt >= beta_opt:
+            rho *= theta
+            linsov.resetC(makeC(g*rho, equatn))
+        elif ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
         # Should all satisfies, break.
         # We don't do it now.
             break
-        elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
-            rho *= theta
-            linsov.resetC(makeC(g*rho, equatn))
-    getRatio(A, b, g, 0, primal, nu_var[0:m], delta, equatn, l_0, echo = True)
     return primal_var.reshape((n, 1)), dual_var.reshape((m, 1)), rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_f_g_A_b_violation(x_k, cuter, dust_param):
@@ -205,32 +175,6 @@ def get_f_g_A_b_violation(x_k, cuter, dust_param):
     violation = v_x(b, cuter.setup_args_dict['adjusted_equatn'])
 
     return f, g, b, A, violation
-
-def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
-    """
-    Line search on merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
-    :param x_k: current x
-    :param d_k: search direction
-    :param rho_k: current penalty parameter
-    :param delta_linearized_model: l(0, rho_k; x_k) - l(d_k, rho_k; x_k) delta of linearized model
-    :param line_theta: line search theta parameter
-    :param cuter instance
-    :param rescale: if true, solve the rescale problem
-    :return: step size
-    """
-
-    alpha = 1.0
-
-    phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
-    phi_d_0 = get_phi(x_k, rho_k, cuter, rescale)
-
-    while np.isnan(phi_d_alpha) or phi_d_alpha - phi_d_0 > - line_theta * alpha * delta_linearized_model:
-        alpha /= 2
-        phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
-        if alpha < STEP_SIZE_MIN:
-            return alpha
-
-    return alpha
 
 def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
     """
