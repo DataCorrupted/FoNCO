@@ -12,7 +12,7 @@ def standardize(g, rho, A, b, delta, equatn):
     #
     #                 A                             x     =       b
     #  
-    # c = | rho*g, -rho*g, e(1, m), e(1, #eq) |
+    # c = | rho*g, -rho*g, e(1, m), e(1, #eq), 0(1, n), 0(1, n) |
     m, n = A.shape
     return makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
 
@@ -51,7 +51,7 @@ def makeB(b, delta, n):
     return b_
 
 def makeC(g, equatn):
-    # c = | rho*g, -rho*g, e(1, m), e(1, #eq) |
+    # c = | rho*g, -rho*g, e(1, m), e(1, #eq), 0(1, n), 0(1, n) |
     n = g.shape[0]
     m = equatn.shape[0]
     c_ = np.zeros((2*m+4*n, 1))

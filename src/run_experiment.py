@@ -124,8 +124,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                 [('Summary for problem', dust_output['problem_name']),
                  ('Status', dust_output['status']), ('Iteration Number', dust_output['iter_num']),
                  ('Final objective', dust_output['obj_f']), ('KKT error', dust_output['kkt_error']),
-                 ('Constraint violation', dust_output['constraint_violation']), ('Execute Time (s)', execution_time),
-                 ('Number Fn', dust_output['fn_eval_cnt'])])
+                 ('Constraint violation', dust_output['constraint_violation']), ('Execute Time (s)', execution_time)])
             print_param_dict(output_print_dict, logger)
             save_output(result_dir, dust_output)
             success_cnt += (dust_output['status'] == 1)
@@ -149,10 +148,10 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     global total_cnt;
     total_cnt = len(problem_list)
     # Debuging.
-    #problem_list = ['HS54']
-    # problem_list = ['HS69']
-    for problem_name in problem_list:
-        if problem_name.startswith("HS"):
+    #problem_list = ['HS52']
+    skip_list = ['HS69', 'HS112', 'HS81']
+    for problem_name in problem_list[:]:
+        if problem_name.startswith("HS") and problem_name not in skip_list:
         	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
 
 

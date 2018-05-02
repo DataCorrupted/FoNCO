@@ -5,13 +5,19 @@ from solver_util import makeA, makeB, makeC, makeBasis
 from simplex import Simplex
 from debug_utils import pause
 
+SIGMA = 0.25
+DELTA = 0.75
+MIN_delta = 1e-5
+MAX_delta = 64
+STEP_SIZE_MIN = 1e-10
+
 class DustParam:
     """
     Store all the dust non linear solver parameters
     """
 
     def __init__(self, init_rho=1, init_omega=1e-2, max_iter=200, max_sub_iter=2000, beta_opt=0.7, beta_fea=0.1,
-                 theta=0.9, init_delta=1, omega_shrink=0.7, eps_opt=1e-4, eps_violation=1e-5,
+                 theta=0.9, init_delta=1, line_theta= 1e-4, omega_shrink=0.7, eps_opt=1e-4, eps_violation=1e-5,
                  sub_verbose=False, rescale=True):
         self.init_rho = init_rho
         self.init_omega = init_omega
@@ -21,6 +27,7 @@ class DustParam:
         self.beta_fea = beta_fea
         self.theta = theta
         self.init_delta = init_delta
+        self.line_theta = line_theta
         self.omega_shrink = omega_shrink
         self.eps_opt = eps_opt
         self.eps_violation = eps_violation
@@ -41,6 +48,23 @@ def v_x(c, adjusted_equatn):
     inequality_violation = np.sum(c[np.logical_and(np.logical_not(adjusted_equatn), (c > 0).flatten())])
 
     return equality_violation + inequality_violation
+
+def get_phi(x, rho, cuter, rescale):
+    """
+    Evaluate merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
+    :param x: current x
+    :param rho: penalty parameter
+    :param cuter instance
+    :param rescale: if true, solve the rescale problem
+    :return: phi(x, rho) = rho * f(x) + dist(c(x) | C)
+    """
+    f, _ = cuter.get_f_g(x, grad_flag=False, rescale=rescale)
+    c, _ = cuter.get_constr_f_g(x, grad_flag=False, rescale=rescale)
+
+    return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
+
+def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
+    return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
 
 def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
     """
@@ -80,7 +104,7 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
         elif x_new < 0 and equatn[i] == True:            
             X += (1+dual_var[i]) * np.abs(x_new)
     return 1-np.sqrt(X / (l_0 + 1e-8))
-def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
+def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0, echo = False):
     # Line 199, formula 2.16.
     # When rho is set to 0, it calculates ratio_fea, or it calculates ratio_obj
     primal_obj = getPrimalObject(primal_var, g, rho, equatn)
@@ -91,7 +115,19 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
         dual_obj = max(0, dual_obj)
 
     up = l_0 - primal_obj
-    down = (l_0 - dual_obj) + 1e-5
+    down = (l_0 - dual_obj)
+
+    if np.abs(up) < 1e-5 and np.abs(down) < 1e-5:
+        return 1
+
+    down += 1e-5
+    if False:
+        print g * rho
+        print l_0, primal_obj, dual_obj
+
+        print primal_var
+        print makeC(g*rho, equatn);
+
     return up/down
 def l0(b, equatn):
     # Line 201
@@ -153,6 +189,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
             rho *= theta
             linsov.resetC(makeC(g*rho, equatn))
+    getRatio(A, b, g, 0, primal, nu_var[0:m], delta, equatn, l_0, echo = True)
     return primal_var.reshape((n, 1)), dual_var.reshape((m, 1)), rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
 
 def get_f_g_A_b_violation(x_k, cuter, dust_param):
@@ -168,6 +205,58 @@ def get_f_g_A_b_violation(x_k, cuter, dust_param):
     violation = v_x(b, cuter.setup_args_dict['adjusted_equatn'])
 
     return f, g, b, A, violation
+
+def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
+    """
+    Line search on merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
+    :param x_k: current x
+    :param d_k: search direction
+    :param rho_k: current penalty parameter
+    :param delta_linearized_model: l(0, rho_k; x_k) - l(d_k, rho_k; x_k) delta of linearized model
+    :param line_theta: line search theta parameter
+    :param cuter instance
+    :param rescale: if true, solve the rescale problem
+    :return: step size
+    """
+
+    alpha = 1.0
+
+    phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
+    phi_d_0 = get_phi(x_k, rho_k, cuter, rescale)
+
+    while np.isnan(phi_d_alpha) or phi_d_alpha - phi_d_0 > - line_theta * alpha * delta_linearized_model:
+        alpha /= 2
+        phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
+        if alpha < STEP_SIZE_MIN:
+            return alpha
+
+    return alpha
+
+def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
+    """
+    Line search on merit function phi(x, rho) = rho * f(x) + dist(c(x) | C)
+    :param x_k: current x
+    :param d_k: search direction
+    :param rho_k: current penalty parameter
+    :param delta_linearized_model: l(0, rho_k; x_k) - l(d_k, rho_k; x_k) delta of linearized model
+    :param line_theta: line search theta parameter
+    :param cuter instance
+    :param rescale: if true, solve the rescale problem
+    :return: step size
+    """
+
+    alpha = 1.0
+
+    phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
+    phi_d_0 = get_phi(x_k, rho_k, cuter, rescale)
+
+    while np.isnan(phi_d_alpha) or phi_d_alpha - phi_d_0 > - line_theta * alpha * delta_linearized_model:
+        alpha /= 2
+        phi_d_alpha = get_phi(x_k + alpha * d_k, rho_k, cuter, rescale)
+        if alpha < STEP_SIZE_MIN:
+            return alpha
+
+    return alpha
 
 def linearSolveTrustRegion(cuter, dust_param, logger):
     """
@@ -209,35 +298,29 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     logger.info('-' * 200)
     logger.info(
         '''{0:4s} | {1:13s} | {2:12s} | {3:12s} | {4:12s} | {5:12s} | {6:12s} | {7:12s} | {8:12s} | {9:12s} | {10:6s} | {11:12s} | {12:12s} | {13:12s}'''.format(
-            'Itr', 'KKT', 'Step_size', 'Violation', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'Omega',
+            'Itr', 'KKT', 'Delta', 'Violation', 'Rho', 'Objective', 'Ratio_C', 'Ratio_Fea', 'Ratio_Opt', 'step_size',
             'SubItr', 'Delta_L', 'Merit', "||d||"))
 
     f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
-    print np.sum(np.abs(g))
     m, n = A.shape
     rho = dust_param.init_rho
     omega = dust_param.init_omega
     max_iter = dust_param.max_iter
     rescale = dust_param.rescale
 
-    # Only required for SQP
-    # Initialize dual variables
-    #dual_var = initialize_dual_var(adjusted_equatn, b)
-    #lam = initialize_dual_var(adjusted_equatn, b)
     kkt_error_k = get_KKT(A, b, g, np.zeros((m, 1)), rho)
 
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
         [dust_param.init_rho], [kkt_error_k], [violation], [f], []
 
-    fn_eval_cnt = 0
-
+    delta = 1; 
+    step_size = 1;
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
-            .format(i, kkt_error_k, -1, violation, rho, f, -1, -1, -1, omega, -1, -1, rho * f + violation, -1))
+            .format(i, kkt_error_k, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
 
 
-    step_size = -1.0
-    delta = 1; 
+
 
     while i < max_iter:
 
@@ -257,8 +340,27 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         
         # Don't know what kke error is yet.
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+
+        if ratio_opt > 0:
+            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / delta_linearized_model
+            if np.isnan(sigma):
+                # Set it to a very small value to escape inf case.
+                sigma = -0x80000000
+            if sigma < SIGMA:
+                delta = max(0.25*delta, MIN_delta)
+            elif sigma > DELTA:
+                delta = min(2*delta, MAX_delta)
+        else:
+            pass
+
+        #print sigma
         # ratio_opt: 3.6. It's actually r_v in paper.
-        x_k += d_k
+        if ratio_opt > 0:
+            step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
+                                          dust_param.rescale)
+            #print step_size
+        if ratio_opt > 0:
+            x_k += d_k
         # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
@@ -278,9 +380,10 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
         logger.info(
             '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
-                .format(i, kkt_error_k, step_size, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, omega,
+                .format(i, kkt_error_k, delta, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, step_size,
                         sub_iter, delta_linearized_model, rho * f + violation, np.linalg.norm(d_k, 2)))
 
+        #pause(d_k, x_k)
         if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
             status = 1
             break
@@ -293,4 +396,4 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     return {'x': x_k, 'dual_var': dual_var, 'rho': rho, 'status': status, 'obj_f': f, 'x0': setup_args_dict['x'],
             'kkt_error': kkt_error_k, 'iter_num': i, 'constraint_violation': violation, 'rhos': all_rhos,
             'violations': all_violations, 'fs': all_fs, 'subiters': all_sub_iter, 'kkt_erros': all_kkt_erros,
-            'fn_eval_cnt': fn_eval_cnt, 'num_var': num_var, 'num_constr': dual_var.shape[0]}
+            'num_var': num_var, 'num_constr': dual_var.shape[0]}
