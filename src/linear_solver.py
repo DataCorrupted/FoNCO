@@ -7,7 +7,7 @@ from debug_utils import pause
 
 SIGMA = 0.25
 DELTA = 0.75
-MIN_delta = 1e-2
+MIN_delta = 1e-5
 MAX_delta = 64
 STEP_SIZE_MIN = 1e-10
 
