@@ -282,7 +282,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
         if ratio_opt > 0:
-            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model + 1e-5)
+            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model)
             if np.isnan(sigma):
                 # Set it to a very small value to escape inf case.
                 sigma = -0x80000000
