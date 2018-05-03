@@ -174,7 +174,7 @@ if __name__ == '__main__':
     success_list = []
     success_cnt = 0;
     total_cnt = 0;
-    sif_dir_root = '/home/peter/Desktop/slp/sif'
+    sif_dir_root = '../sif'
     log_dir = './logs/logs_0'
     result_dir = './results/results_64'
     # all_tests(sif_dir_root, log_dir, result_dir)
