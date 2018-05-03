@@ -137,7 +137,6 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
         except Exception as e:
             print e
             logger.error('End of problem: {0}'.format(problem_name))
-
     logger.info('+' * 200)
 
 
@@ -152,15 +151,15 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     problem_list = os.listdir(sif_dir_root)
     global total_cnt;
     # Debuging.
-    #problem_list = ['HS46']
-    skip_list = ['HS99EXP']
+    #                                          516      512
+    # problem_list = ['HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP', 'HS98']
+    #skip_list = ['HS99EXP']
     skip_list = []
     total_cnt = len(problem_list)
     for problem_name in problem_list[:]:
         if problem_name.startswith("HS") and problem_name not in skip_list:
-            #if problem_name == 'HS46':
-                #dust_param.max_iter = 1000
         	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
+        # pause()
 
 
 if __name__ == '__main__':
