@@ -125,7 +125,12 @@ x_1 		d_1 		alpha = 1, delta = 1
 		Problem HS107, HS33, HS36, HS56 and HS37 has exploding KKT. Their KKT rises as the iteration goes on. Thus they are never solved. \par
 		One trait is that their $r_{fea}$ is always small(for HS33 and 37, small means -1) while other two is always 1.
 	\subsection{HS99EXP Type}
-		I couldn't get hands on what exactly HS99EXP is. Jianshan skipped this problem when testing. But my program won't converge on this problem. \par
+		We couldn't get hands on what exactly HS99EXP is. Jianshan skipped this problem when testing. But my program won't converge on this problem. \par
 		HS99EXP won't converge no matter how large $\delta$ is. It always reaches a maximum $\delta$ yes the KKT and violation barely changes. Further more, after some iteration, Simplex will report one sub problem as unbounded.
+
+\section{Furture Work}
+
+	\par We want to focus on HS88. Tackling it's problems seems rewarding as it simultaneously solves at least 10 problems. Best of all, it only contains 2 variables and 1 inequality constrain, which is human-readable and easy to understand.
+	\par More parameter tuning should be done to understand what the problem really is. But further more, we should try to reason about it's causes, or we would be mindless parameter tuners :) 
 \end{document}
 
