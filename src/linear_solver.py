@@ -100,7 +100,7 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
 def l0(b, equatn, omega):
     # Line 201
     b = b.reshape(1, -1)[0]
-    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)]) + 0
+    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)]) + omega
 
 def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     equatn = cuter.setup_args_dict['adjusted_equatn']
