@@ -63,7 +63,7 @@ def getDualObject(A, g, rho, b, dual_var, delta):
     return  \
         (b.T.dot(dual_var) -  \
         delta * np.sum(np.abs(rho * g.T + dual_var.T.dot(A))))[0]
-def getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega):
+def getRatioC(A, b, dual_var, primal_var, equatn, l_0):
     # line 227: r_c = 1 - sqrt(X/l_0)
     # line 221: X = sum((1-dual(i)) * v(<a, d> + b)) + sum((1+dual(j)) * v(<a, d> + b))
     #           where i in E+(d), I+(d), j in I-(d) 
@@ -97,10 +97,10 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
         print makeC(g*rho, equatn);
 
     return up/down
-def l0(b, equatn):
+def l0(b, equatn, omega):
     # Line 201
     b = b.reshape(1, -1)[0]
-    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)])
+    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)]) + 0
 
 def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     equatn = cuter.setup_args_dict['adjusted_equatn']
@@ -122,7 +122,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     ratio_fea = 1;
     ratio_c = 0
 
-    l_0 = l0(b, equatn)
+    l_0 = l0(b, equatn, omega)
     iter_cnt = 0
     while not linsov.isOptimal():
         iter_cnt += 1;
@@ -146,7 +146,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # Update ratios.
         ratio_fea = getRatio(A, b, g, 0, primal, nu_var[0:m], delta, equatn, l_0)
         ratio_opt = getRatio(A, b, g, rho, primal, dual_var, delta, equatn, l_0)
-        ratio_c = getRatioC(A, b, dual_var, primal_var, equatn, l_0, omega)
+        ratio_c = getRatioC(A, b, dual_var, primal_var, equatn, l_0)
 
         if ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
         # Should all satisfies, break.
@@ -269,6 +269,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         # DUST / PSST / Subproblem here.
         d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
             getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
+        #pause(x_k, d_k)
         # 2.3
         l_0_rho_x_k = linearModelPenalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linearModelPenalty(A, b, g, rho, d_k, adjusted_equatn)

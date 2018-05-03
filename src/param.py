@@ -7,17 +7,21 @@ class DustParam:
 
         # Setup default ones.
         # I didn't use default value so that I can see clearer.
+
+        #TODO add omega to l0
         self.init_rho = 1;
         self.init_omega = 1e-2;
         self.max_iter = 512;
         self.max_sub_iter = 100;
         self.beta_opt = 0.75;
         self.beta_fea = 0.3;
+
+        #TODO Try smaller theta
         self.theta = 0.9;
         self.line_theta =  1e-4;
         self.omega_shrink = 0.7;
         self.eps_opt = 1e-4;
-        self.eps_violation = 1e-5;
+        self.eps_violation = 1e-4;
         self.sub_verbose = False;
         self.rescale = True;
         self.SIGMA = 0.3;               # Trust region update.
