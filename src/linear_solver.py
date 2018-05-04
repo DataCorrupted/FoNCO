@@ -262,10 +262,18 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             .format(i, kkt_error_k, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
 
 
+    last_g = np.zeros(g.shape);
+    last_x = np.zeros(x_k.shape);
 
 
     while i < max_iter:
 
+        s = x_k - last_x
+        y = g - last_g
+
+        
+        delta = np.abs((s.T.dot(y)+1e-5) / (y.T.dot(y) + 1e-5))
+        delta = delta[0][0]
         # DUST / PSST / Subproblem here.
         d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
             getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
@@ -279,9 +287,12 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
         
-        # Don't know what kke error is yet.
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
+
+        # TODO
+        # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)
+        # s(k-1) = x(k) - x(k-1), y(k-1) = g(k) - g(k-1)
         if ratio_opt > 0:
             sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model)
             if np.isnan(sigma):
@@ -291,8 +302,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 delta = max(0.5*delta, dust_param.MIN_delta)
             elif sigma > dust_param.DELTA:
                 delta = min(2*delta, dust_param.MAX_delta)
-        else:
-            pass
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
