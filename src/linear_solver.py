@@ -261,19 +261,8 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
             .format(i, kkt_error_k, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
 
-
-    last_g = np.zeros(g.shape);
-    last_x = np.zeros(x_k.shape);
-
-
     while i < max_iter:
 
-        s = x_k - last_x
-        y = g - last_g
-
-        
-        delta = np.abs((s.T.dot(y)+1e-5) / (y.T.dot(y) + 1e-5))
-        delta = delta[0][0]
         # DUST / PSST / Subproblem here.
         d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
             getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
@@ -293,6 +282,8 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         # TODO
         # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)
         # s(k-1) = x(k) - x(k-1), y(k-1) = g(k) - g(k-1)
+        # This feature is in branch "delta"
+        # But it seems it's not working
         if ratio_opt > 0:
             sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model)
             if np.isnan(sigma):
