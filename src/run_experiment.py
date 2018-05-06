@@ -165,7 +165,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     #skip_list = ['HS99EXP']
     skip_list = []
     total_cnt = len(problem_list)  - 2
-    dust_param.max_iter = 512
+    #dust_param.max_iter = 512
     for problem_name in problem_list[:]:
         if problem_name.startswith("HS") and problem_name not in skip_list:
         	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
