@@ -36,6 +36,9 @@ def get_phi(x, rho, cuter, rescale):
     return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
 
 def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
+    """
+    Evaluate delta merit function phi(x0, rho) - phi(x1, rho)
+	"""
     return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
 
 def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
@@ -150,7 +153,6 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
 
         if ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
         # Should all satisfies, break.
-        # We don't do it now.
             break
         elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
         # Update rho if needed.
@@ -284,6 +286,8 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         # s(k-1) = x(k) - x(k-1), y(k-1) = g(k) - g(k-1)
         # This feature is in branch "delta"
         # But it seems it's not working
+
+        # Update delta.
         if ratio_opt > 0:
             sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model)
             if np.isnan(sigma):
