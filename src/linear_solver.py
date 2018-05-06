@@ -284,6 +284,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
     while i < max_iter:
 
+    	# Delta update proposed by Jianshan
         s = x_k - last_x
         y = g - last_g
 
