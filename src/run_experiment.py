@@ -101,7 +101,6 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
     :param result_dir: result directory to store the output
     :return: dust output
     """
-    global success_cnt
     logger = get_logger(log_dir, '{0}.log'.format(problem_name))
     #logger.info('+' * 200)
     with Cuter(os.path.join(sif_dir_root, problem_name)) as cuter:
@@ -129,10 +128,9 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
             print_param_dict(output_print_dict, logger)
             save_output(result_dir, dust_output)
             if dust_output['status'] == 1:
-                success_cnt += 1
                 success_list.append(problem_name)
             else:
-                pass
+                fail_list.append(problem_name)
         except Exception as e:
             print e
             logger.error('End of problem: {0}'.format(problem_name))
@@ -175,11 +173,11 @@ def all_tests(sif_dir_root, log_dir, result_dir):
 
 
 if __name__ == '__main__':
-    global success_cnt;
     global total_cnt
     global success_list
+    global fail_list
     success_list = []
-    success_cnt = 0;
+    fail_list = []
     total_cnt = 0;
     sif_dir_root = '../sif'
     log_dir = './logs/logs_0'
@@ -187,6 +185,7 @@ if __name__ == '__main__':
     # all_tests(sif_dir_root, log_dir, result_dir)
     dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
-    print success_cnt
+    print len(success_list)
     print total_cnt
     print success_list
+    print fail_list
