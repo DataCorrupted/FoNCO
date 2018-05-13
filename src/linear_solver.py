@@ -226,7 +226,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         :return: kkt error
         """
 
-        err_grad = np.max(np.abs(A.T.dot(eta/rho) + g))    
+        err_grad = np.max(np.abs(A.T.dot(eta) + g * rho))    
         err_complement = np.max(np.abs(eta * b))
         return max(err_grad, err_complement)
 
