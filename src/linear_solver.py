@@ -7,6 +7,7 @@ from debug_utils import pause
 
 STEP_SIZE_MIN = 1e-10
 
+
 def v_x(c, adjusted_equatn):
     """
     Calcuate v_x as defined in the paper which is the 1 norm of constraint violation of `c` vector
@@ -20,6 +21,7 @@ def v_x(c, adjusted_equatn):
     inequality_violation = np.sum(c[np.logical_and(np.logical_not(adjusted_equatn), (c > 0).flatten())])
 
     return equality_violation + inequality_violation
+
 
 def get_phi(x, rho, cuter, rescale):
     """
@@ -35,11 +37,13 @@ def get_phi(x, rho, cuter, rescale):
 
     return v_x(c, cuter.setup_args_dict['adjusted_equatn']) + rho * f
 
+
 def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
     """
     Evaluate delta merit function phi(x0, rho) - phi(x1, rho)
 	"""
     return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
+
 
 def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
     """
@@ -58,14 +62,19 @@ def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
     linear_model = g.T.dot(d) * rho + v_x(c, adjusted_equatn)
     return linear_model[0, 0]
 
+
 def getPrimalObject(primal_var, g, rho, equatn):
     # Line 757, formula 4.1
-    return primal_var.dot(makeC(g*rho, equatn));
+    return primal_var.dot(makeC(g * rho, equatn));
+
+
 def getDualObject(A, g, rho, b, dual_var, delta):
     # Line 763, formula 4.2
-    return  \
-        (b.T.dot(dual_var) -  \
-        delta * np.sum(np.abs(rho * g.T + dual_var.T.dot(A))))[0]
+    return \
+        (b.T.dot(dual_var) - \
+         delta * np.sum(np.abs(rho * g.T + dual_var.T.dot(A))))[0]
+
+
 def getRatioC(A, b, dual_var, primal_var, equatn, l_0):
     # line 227: r_c = 1 - sqrt(X/l_0)
     # line 221: X = sum((1-dual(i)) * v(<a, d> + b)) + sum((1+dual(j)) * v(<a, d> + b))
@@ -75,16 +84,18 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0):
     for i in range(m):
         x_new = A[i, :].dot(primal_var) + b[i, 0]
         if x_new > 0:
-            X += (1-dual_var[i]) * x_new
-        elif x_new < 0 and equatn[i] == True:            
-            X += (1+dual_var[i]) * np.abs(x_new)
-    return 1-np.sqrt(X / (l_0 + 1e-8))
+            X += (1 - dual_var[i]) * x_new
+        elif x_new < 0 and equatn[i] == True:
+            X += (1 + dual_var[i]) * np.abs(x_new)
+    return 1 - np.sqrt(X / (l_0 + 1e-8))
+
+
 def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
     # Line 199, formula 2.16.
     # When rho is set to 0, it calculates ratio_fea, or it calculates ratio_obj
     primal_obj = getPrimalObject(primal_var, g, rho, equatn)
     dual_obj = getDualObject(A, g, rho, b, dual_var, delta)
-    
+
     if rho == 0:
         # Take the positive part
         dual_obj = max(0, dual_obj)
@@ -97,28 +108,31 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
         print l_0, primal_obj, dual_obj
 
         print primal_var
-        print makeC(g*rho, equatn);
+        print makeC(g * rho, equatn);
 
-    return up/down
+    return up / down
+
+
 def l0(b, equatn, omega):
     # Line 201
     b = b.reshape(1, -1)[0]
-    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b>0)]) + omega
+    return np.sum(np.abs(b[equatn == True])) + np.sum(b[np.logical_and(equatn == False, b > 0)]) + omega
+
 
 def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
     equatn = cuter.setup_args_dict['adjusted_equatn']
-    
+
     m, n = A.shape
-    c_, A_, b_, basis_ = makeC(g*rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
-    
+    c_, A_, b_, basis_ = makeC(g * rho, equatn), makeA(A), makeB(b, delta, n), makeBasis(b, n)
+
     # Construct a simplex problem instance.
     linsov = Simplex(c_, A_, b_, basis_)
     primal = linsov.getPrimalVar()
 
-    beta_fea = dust_param.beta_fea 
+    beta_fea = dust_param.beta_fea
     beta_opt = dust_param.beta_opt
     theta = dust_param.theta
-    
+
     dual_var = np.zeros(m)
     primal_var = np.zeros(n)
     ratio_opt = 1;
@@ -138,13 +152,13 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # but we are only interested with the first 2n, as they are plus and minus of d.
         primal = linsov.getPrimalVar()
         # primal_var = d+ - d-
-        primal_var = primal[0:n] - primal[n:2*n]
+        primal_var = primal[0:n] - primal[n:2 * n]
 
         # dual_var also has size m+2n,
         # but we are only interested with the first m.
         dual = -linsov.getDualVar()
         dual_var = dual[0, 0:m]
-        nu_var = -linsov.getNuVar(makeC(g*0, equatn))
+        nu_var = -linsov.getNuVar(makeC(g * 0, equatn))
 
         # Update ratios.
         ratio_fea = getRatio(A, b, g, 0, primal, nu_var[0:m], delta, equatn, l_0)
@@ -155,12 +169,13 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # Should all satisfies, break.
             break
         elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
-        # Update rho if needed.
+            # Update rho if needed.
             rho *= theta
-            linsov.resetC(makeC(g*rho, equatn))
+            linsov.resetC(makeC(g * rho, equatn))
 
-    #print getPrimalObject(primal, g, rho, equatn)
+    # print getPrimalObject(primal, g, rho, equatn)
     return primal_var.reshape((n, 1)), dual_var.reshape((m, 1)), rho, ratio_c, ratio_opt, ratio_fea, iter_cnt
+
 
 def get_f_g_A_b_violation(x_k, cuter, dust_param):
     """
@@ -175,6 +190,7 @@ def get_f_g_A_b_violation(x_k, cuter, dust_param):
     violation = v_x(b, cuter.setup_args_dict['adjusted_equatn'])
 
     return f, g, b, A, violation
+
 
 def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter, rescale):
     """
@@ -204,6 +220,7 @@ def line_search_merit(x_k, d_k, rho_k, delta_linearized_model, line_theta, cuter
     # may be double alpha when necessary.
     return alpha
 
+
 def linearSolveTrustRegion(cuter, dust_param, logger):
     """
     Non linear solver for cuter problems
@@ -215,6 +232,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 -1 - max iteration reached
                 1 - solve the problem to optimality
     """
+
     def get_KKT(A, b, g, eta, rho):
         """
         Calcuate KKT error
@@ -257,7 +275,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
         [dust_param.init_rho], [kkt_error_k], [violation], [f], []
 
-    delta = 1; 
+    delta = 1;
     step_size = 1;
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
@@ -269,7 +287,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         # DUST / PSST / Subproblem here.
         d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
             getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
-        #pause(x_k, d_k)
+        # pause(x_k, d_k)
         # 2.3
         l_0_rho_x_k = linearModelPenalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linearModelPenalty(A, b, g, rho, d_k, adjusted_equatn)
@@ -278,7 +296,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         l_0_0_x_k = linearModelPenalty(A, b, g, 0, zero_d, adjusted_equatn)
         l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
-        
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
 
@@ -297,9 +314,9 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 # Set it to a very small value to escape inf case.
                 sigma = -0x80000000
             if sigma < dust_param.SIGMA:
-                delta = max(0.5*delta, dust_param.MIN_delta)
+                delta = max(0.5 * delta, dust_param.MIN_delta)
             elif sigma > dust_param.DELTA:
-                delta = min(2*delta, dust_param.MAX_delta)
+                delta = min(2 * delta, dust_param.MAX_delta)
 
             if (np.linalg.norm(d_k, 2) < 1e-5 or np.linalg.norm(d_k - d_last, 2) < 1e-5):
                 rho *= dust_param.theta
