@@ -319,9 +319,9 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             elif sigma > dust_param.DELTA:
                 delta = min(2 * delta, dust_param.MAX_delta)
 
-            if (np.linalg.norm(d_k, 2) < 1e-5 or np.linalg.norm(d_k - d_last, 2) < 1e-5):
+            if np.linalg.norm(d_k, 2) < 1e-5:
                 rho *= dust_param.theta
-                d_k= np.random.rand(*x_k.shape)
+#                d_k= np.random.rand(*x_k.shape)
             d_last = d_k
 
         # ratio_opt: 3.6. It's actually r_v in paper.
