@@ -281,7 +281,7 @@ class Cuter(object):
                 obj_scale = setup_args_dict['obj_scale']
                 hessian_f *= obj_scale
             else:
-                constr_scale = setup_args_dict['obj_scale']
+                constr_scale = setup_args_dict['constr_scale']
                 hessian_f *= constr_scale[iprob - 1]
 
         return hessian_f
