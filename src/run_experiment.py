@@ -184,6 +184,16 @@ if __name__ == '__main__':
     # all_tests(sif_dir_root, log_dir, result_dir)
     dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
+
+    import pickle
+    with open(log_dir + '/Failure_note.txt', 'w') as f:
+        f.write("Failed cases:\n")
+        f.write(str(fail_list) + "\n\n")
+        f.write("Succeeded cases:\n")
+        f.write(str(success_list) + "\n\n")
+        f.write("Success rate: ")
+        f.write(str(len(success_list) / (total_cnt + 0.0)))
+
     print len(success_list)
     print total_cnt
     print success_list

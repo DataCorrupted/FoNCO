@@ -94,14 +94,14 @@ def get_summary(all_output):
                 'constraint_violation': 'Violation', 'rhos': 'Rho', 'fn_eval_cnt': '$f(x)$ #',
                 'problem_name': 'Problem'}
 
-    #cols = ['Problem', 'Iter #', '$f(x)$ #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
-    cols = ['Problem', 'Iter #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
+    cols = ['Problem', 'Iter #', '$f(x)$ #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
+    # cols = ['Problem', 'Iter #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
     summary_df.rename(columns=name_map, inplace=True)
 
     summary_df = summary_df[cols]
-    #summary_df['$f(x)$ #'] = summary_df['$f(x)$ #'].astype('int')
-    #summary_df['Iter #'] = summary_df['Iter #'] + 1
-    #summary_df['$f(x)$ #'] = summary_df['$f(x)$ #'] + 1
+    summary_df['$f(x)$ #'] = summary_df['$f(x)$ #'].astype('int')
+    summary_df['Iter #'] = summary_df['Iter #'] + 1
+    summary_df['$f(x)$ #'] = summary_df['$f(x)$ #'] + 1
 
     printToLatex(summary_df)
 
