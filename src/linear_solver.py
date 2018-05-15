@@ -41,7 +41,7 @@ def get_phi(x, rho, cuter, rescale):
 def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
     """
     Evaluate delta merit function phi(x0, rho) - phi(x1, rho)
-    """
+	"""
     return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
 
 
@@ -319,17 +319,15 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             elif sigma > dust_param.DELTA:
                 delta = min(2 * delta, dust_param.MAX_delta)
 
-#            if np.linalg.norm(d_k, 2) < 1e-5:
-#                rho *= dust_param.theta
-#                d_k= np.random.rand(*x_k.shape)
-#            d_last = d_k
+            if (np.linalg.norm(d_k, 2) < 1e-5 or np.linalg.norm(d_k - d_last, 2) < 1e-5):
+                rho *= dust_param.theta
+                d_k= np.random.rand(*x_k.shape)
+            d_last = d_k
 
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter, \
                                           dust_param.rescale)
-            if step_size < 1e-3 and np.linalg.norm(d_k, 2) < 1e-3:
-                step_size = 1;
             x_k += d_k * step_size
 #            if (np.linalg.norm(d_k, 2) < 1e-5):
 #                rho *= dust_param.theta
