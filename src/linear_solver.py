@@ -39,6 +39,9 @@ def get_phi(x, rho, cuter, rescale):
 
 
 def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
+    """
+    Evaluate delta merit function phi(x0, rho) - phi(x1, rho)
+	"""
     return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
 
 
@@ -163,8 +166,7 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         ratio_c = getRatioC(A, b, dual_var, primal_var, equatn, l_0)
 
         if ratio_c >= beta_fea and ratio_opt >= beta_opt and ratio_fea >= beta_fea:
-            # Should all satisfies, break.
-            # We don't do it now.
+        # Should all satisfies, break.
             break
         elif ratio_c >= beta_fea and ratio_opt >= beta_opt:
             # Update rho if needed.
@@ -242,7 +244,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         :return: kkt error
         """
 
-        err_grad = np.max(np.abs(A.T.dot(eta / rho) + g))
+        err_grad = np.max(np.abs(A.T.dot(eta) + g * rho))    
         err_complement = np.max(np.abs(eta * b))
         return max(err_grad, err_complement)
 
@@ -279,6 +281,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
             .format(i, kkt_error_k, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
 
+    d_last = np.zeros(zero_d.shape)
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.
@@ -293,12 +296,20 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         l_0_0_x_k = linearModelPenalty(A, b, g, 0, zero_d, adjusted_equatn)
         l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
-
-        # Don't know what kke error is yet.
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
+
+        # TODO
+        # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)
+        # s(k-1) = x(k) - x(k-1), y(k-1) = g(k) - g(k-1)
+        # This feature is in branch "delta"
+        # But it seems it's not working
+
+        # Update delta.
         if ratio_opt > 0:
-            sigma = get_delta_phi(x_k, x_k + d_k, rho, cuter, rescale, delta) / (delta_linearized_model)
+            #print get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta)
+            #print delta_linearized_model
+            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model + 1e-5)
             if np.isnan(sigma):
                 # Set it to a very small value to escape inf case.
                 sigma = -0x80000000
@@ -306,13 +317,22 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 delta = max(0.5 * delta, dust_param.MIN_delta)
             elif sigma > dust_param.DELTA:
                 delta = min(2 * delta, dust_param.MAX_delta)
-        else:
-            pass
+
+            if (np.linalg.norm(d_k, 2) < 1e-5 or np.linalg.norm(d_k - d_last, 2) < 1e-5):
+                rho *= dust_param.theta
+                d_k= np.random.rand(*x_k.shape)
+            d_last = d_k
+
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
-            step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
+            step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter, \
                                           dust_param.rescale)
             x_k += d_k * step_size
+#            if (np.linalg.norm(d_k, 2) < 1e-5):
+#                rho *= dust_param.theta
+#                x_k += np.random.rand(*x_k.shape)
+
+
         # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
