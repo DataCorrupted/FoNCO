@@ -104,7 +104,8 @@ class Simplex:
         positive_rows = np.where(tableau[:,pivot_col_idx] > 0)[0]
         # We are solving problems that are almost always have bounds.
         # Let't not worry about it first.
-        if positive_rows.size == 0: print('Unbounded Solution!')
+        if positive_rows.size == 0: 
+            return
         # Determine the pivot row:
         divide = \
             (tableau[positive_rows, self.n_] / tableau[positive_rows,pivot_col_idx])
