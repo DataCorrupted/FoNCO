@@ -298,10 +298,15 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
                 delta = max(0.5*delta, dust_param.MIN_delta)
             elif sigma > dust_param.DELTA:
                 delta = min(2*delta, dust_param.MAX_delta)
+
+        if (np.linalg.norm(d_k, 2) < 1e-5):
+            rho *= dust_param.theta
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
+            if (step_size < 1e-5):
+                step_size = 1;
             x_k += d_k * step_size
             fn_eval_cnt += 1 - np.log2(step_size)
         else:
