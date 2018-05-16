@@ -290,7 +290,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
         # Update delta.
         if ratio_opt > 0:
-            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model)
+            sigma = get_delta_phi(x_k, x_k+d_k, rho, cuter, rescale, delta) / (delta_linearized_model + 1e-5)
             if np.isnan(sigma):
                 # Set it to a very small value to escape inf case.
                 sigma = -0x80000000
@@ -299,19 +299,16 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             elif sigma > dust_param.DELTA:
                 delta = min(2*delta, dust_param.MAX_delta)
 
-        if (np.linalg.norm(d_k, 2) < 1e-5):
-            rho *= dust_param.theta
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
-            if (step_size < 1e-5):
-                step_size = 1;
             x_k += d_k * step_size
             fn_eval_cnt += 1 - np.log2(step_size)
         else:
             fn_eval_cnt += 1
         # PSST
+
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
             # TODO: Change this update, as we are using linear.
@@ -338,6 +335,9 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             status = 1
             break
         i += 1
+        if (np.linalg.norm(d_k, 2) < 1e-10):
+            rho *= dust_param.theta
+
     logger.info('-' * 200)
 
     if rescale:
