@@ -341,4 +341,4 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     return {'x': x_k, 'dual_var': dual_var, 'rho': rho, 'status': status, 'obj_f': f, 'x0': setup_args_dict['x'],
             'kkt_error': kkt_error_k, 'iter_num': i, 'constraint_violation': violation, 'rhos': all_rhos,
             'violations': all_violations, 'fs': all_fs, 'subiters': all_sub_iter, 'kkt_erros': all_kkt_erros,
-            'num_var': num_var, 'num_constr': dual_var.shape[0]}
+            'fn_eval_cnt': fn_eval_cnt, 'num_var': num_var, 'num_constr': dual_var.shape[0]}
