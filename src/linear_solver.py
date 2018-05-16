@@ -244,7 +244,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         :return: kkt error
         """
 
-        err_grad = np.max(np.abs(A.T.dot(eta) + g * rho))    
+        err_grad = np.max(np.abs(A.T.dot(eta/rho) + g))    
         err_complement = np.max(np.abs(eta * b))
         return max(err_grad, err_complement)
 
@@ -281,7 +281,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
             .format(i, kkt_error_k, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
 
-    d_last = np.zeros(zero_d.shape)
     fn_eval_cnt = 0;
     while i < max_iter:
 
@@ -319,19 +318,15 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             elif sigma > dust_param.DELTA:
                 delta = min(2 * delta, dust_param.MAX_delta)
 
-            if np.linalg.norm(d_k, 2) < 1e-5:
-                rho *= dust_param.theta
+#            if np.linalg.norm(d_k, 2) < 1e-5:
+#                rho *= dust_param.theta
 #                d_k= np.random.rand(*x_k.shape)
-            d_last = d_k
 
         # ratio_opt: 3.6. It's actually r_v in paper.
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter, \
                                           dust_param.rescale)
             x_k += d_k * step_size
-#            if (np.linalg.norm(d_k, 2) < 1e-5):
-#                rho *= dust_param.theta
-#                x_k += np.random.rand(*x_k.shape)
             fn_eval_cnt += 1 - np.log2(step_size)
         else:
             fn_eval_cnt += 1
