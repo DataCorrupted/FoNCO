@@ -311,10 +311,11 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             if step_size != 1:
                 _, _, b_star, _, _ = get_f_g_A_b_violation(x_k+d_k, cuter, dust_param)
                 d_k_star = -np.linalg.pinv(A).dot(b_star)
-
-                x_k += d_k + d_k_star
-            else:
-                x_k += d_k * step_size
+                d_k += d_k_star
+                step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
+                                              dust_param.rescale)
+                fn_eval_cnt -= np.log2(step_size)
+            x_k += d_k * step_size
         fn_eval_cnt += 1;
         
         # PSST
@@ -328,7 +329,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         if np.isnan(kkt_error_k):
             status = -1;
             break;
-            
+
         omega *= dust_param.omega_shrink
 
         # Store iteration information
