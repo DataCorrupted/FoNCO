@@ -253,16 +253,16 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     max_iter = dust_param.max_iter
     rescale = dust_param.rescale
 
-    kkt_error_k = get_KKT(A, b, g, np.zeros((m, 1)), rho)
+    init_kkt = get_KKT(A, b, g, np.zeros((m, 1)), rho)
 
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
-        [dust_param.init_rho], [kkt_error_k], [violation], [f], []
+        [dust_param.init_rho], [1], [violation], [f], []
 
     delta = 1; 
     step_size = 1;
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
-            .format(i, kkt_error_k, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
+            .format(i, 1, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
     
     fn_eval_cnt = 0
     while i < max_iter:
@@ -280,7 +280,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
         
-        kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+        kkt_error_k = get_KKT(A, b, g, dual_var, rho) / init_kkt
 
 
         # TODO
@@ -328,7 +328,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             rho = (1 - beta_l) * (delta_linearized_model_0 + omega) / (g.T.dot(d_k))[0, 0]
 
         f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
-        kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+        kkt_error_k = get_KKT(A, b, g, dual_var, rho) / init_kkt
 
         omega *= dust_param.omega_shrink
 
