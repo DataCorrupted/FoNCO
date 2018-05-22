@@ -155,29 +155,26 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     #                                          516      512
     # problem_list = ['HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP', 'HS98']
     #problem_list = ['HS98', 'HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP']
-    #problem_list = ['HS20']
+    #problem_list = ['HS109']
     #                       delta = 1
     #problem_list = ['HS118', 'HS20', 'HS88', 'HS23', 'HS93', 'HS97', 'HS92', 'HS90', 'HS83']
     #dust_param.max_iter = 64
     #dust_param.MIN_delta = 16
     skip_list = ['HS99EXP']
-    total_cnt = len(problem_list)  - 2
     #dust_param.beta_opt = .99
     #dust_param.max_iter = 64
     #problem_list = ['HS44']
-    for problem_name in problem_list[:]:
+    for problem_name in problem_list[:10]:
         if problem_name.startswith("HS") and problem_name not in skip_list:
         	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
     #    pause()
 
 
 if __name__ == '__main__':
-    global total_cnt
     global success_list
     global fail_list
     success_list = []
     fail_list = []
-    total_cnt = 0;
     sif_dir_root = '../sif'
     log_dir = './logs/logs_0'
     result_dir = './results/results_64'
@@ -185,6 +182,7 @@ if __name__ == '__main__':
     dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
 
+    total_cnt = len(success_list) + len(fail_list)
     import pickle
     with open(log_dir + '/Failure_note.txt', 'w') as f:
         f.write("Failed cases:\n")
