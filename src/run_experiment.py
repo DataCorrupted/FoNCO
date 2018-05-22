@@ -155,7 +155,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     #                                          516      512
     # problem_list = ['HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP', 'HS98']
     #problem_list = ['HS98', 'HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP']
-    #problem_list = ['HS20']
+    #problem_list = ['HS109']
     #                       delta = 1
     #problem_list = ['HS118', 'HS20', 'HS88', 'HS23', 'HS93', 'HS97', 'HS92', 'HS90', 'HS83']
     #dust_param.max_iter = 64

@@ -78,7 +78,7 @@ def getRatioC(A, b, dual_var, primal_var, equatn, l_0):
             X += (1-dual_var[i]) * x_new
         elif x_new < 0 and equatn[i] == True:            
             X += (1+dual_var[i]) * np.abs(x_new)
-    return 1-np.sqrt(X / (l_0 + 1e-8))
+    return 1-np.sqrt(np.abs(X / (l_0 + 1e-8)))
 def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
     # Line 199, formula 2.16.
     # When rho is set to 0, it calculates ratio_fea, or it calculates ratio_obj
@@ -252,7 +252,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     max_iter = dust_param.max_iter
     rescale = dust_param.rescale
 
-    init_kkt = get_KKT(A, b, g, np.zeros((m, 1)), rho)
+    #init_kkt = get_KKT(A, b, g, np.zeros((m, 1)), rho)
 
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
         [dust_param.init_rho], [1], [violation], [f], []
@@ -279,8 +279,11 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
         
-        kkt_error_k = get_KKT(A, b, g, dual_var, rho) / init_kkt
-
+        kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+        if i == 0:
+            init_kkt = kkt_error_k
+        else:
+            kkt_error_k /= init_kkt
 
         # TODO
         # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)
@@ -307,8 +310,10 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             fn_eval_cnt += 1 - np.log2(step_size)
         else:
             fn_eval_cnt += 1
-        # PSST
 
+
+
+        # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
             # TODO: Change this update, as we are using linear.
