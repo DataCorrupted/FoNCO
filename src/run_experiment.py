@@ -160,7 +160,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     #problem_list = ['HS118', 'HS20', 'HS88', 'HS23', 'HS93', 'HS97', 'HS92', 'HS90', 'HS83']
     #dust_param.max_iter = 64
     #dust_param.MIN_delta = 16
-    skip_list = ['HS99EXP', 'HS85']
+    skip_list = ['HS99EXP']
     total_cnt = len(problem_list)  - 2
     #dust_param.beta_opt = .99
     #dust_param.max_iter = 64
