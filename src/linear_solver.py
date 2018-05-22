@@ -305,17 +305,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
             fn_eval_cnt -= np.log2(step_size)
-            if step_size != 1:
-
-                _, _, b_star, _, _ = get_f_g_A_b_violation(x_k, cuter, dust_param)
-                try:
-                    d_k_star = -A.T.dot(np.linalg.inv(A.dot(A.T))).dot(b_star)
-                except:
-                    d_k_star = -A.T.dot(b_star)
-                
-                d_k = d_k + d_k_star
-            else:
-                x_k += d_k * step_size
+            x_k += d_k * step_size
 
             
             
