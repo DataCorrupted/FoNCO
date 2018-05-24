@@ -108,13 +108,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
             logger.info("Problem name: {0}".format(problem_name))
             print_problem_statement(cuter.setup_args_dict, logger)
             logger.info('-' * 200)
-            init_param_dict = {'Omega': dust_param.init_omega, 'Rho': dust_param.init_rho,
-                               'Beta_opt': dust_param.beta_opt,
-                               'Beta_feasibility': dust_param.beta_fea,
-                               'Theta': dust_param.theta,
-                               'Omega shrink': dust_param.omega_shrink, 'Max sub iteration': dust_param.max_sub_iter,
-                               'Eps opt': dust_param.eps_opt}
-            print_param_dict(init_param_dict, logger)
+            print_param_dict(dust_param.dump2Dict(), logger)
             start_time = time.time()
             dust_output = linearSolveTrustRegion(cuter, dust_param, logger)
             execution_time = time.time() - start_time
@@ -126,7 +120,6 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                  ('Final objective', dust_output['obj_f']), ('KKT error', dust_output['kkt_error']),
                  ('Constraint violation', dust_output['constraint_violation']), ('Execute Time (s)', execution_time)])
             print_param_dict(output_print_dict, logger)
-            print_param_dict(dust_param.dump2Dict(), logger)
             save_output(result_dir, dust_output)
             if dust_output['status'] == 1:
                 success_list.append(problem_name)
@@ -151,10 +144,10 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     # problem_list = ["HS101", "HS102", "HS103"]          # Violation won't drop. KKT good and stable.
     # problem_list = ["HS90", "HS91", "HS92", "HS93"]     # Violation won't drop. KKT good and stable.
     # problem_list = ["HS67"]                             # Bad ratio_fea
-    problem_list = ["HS88"]
+    # problem_list = ["HS88"]
     skip_list = ['HS99EXP', 'HS84', "HS83", "HS85"]
     for problem_name in problem_list[:]:
-        dust_param = DustParam(max_iter = 64)
+        dust_param = DustParam()
         if problem_name in ["HS105", "HS80"]:
             dust_param.MIN_delta = 1e-4
         if problem_name in ["HS69", "HS68"]:
