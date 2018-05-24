@@ -162,10 +162,10 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     #dust_param.MIN_delta = 16
     skip_list = ['HS99EXP', 'HS84', "HS83", "HS85"]
     #dust_param.beta_opt = .99
-    dust_param.max_iter = 512
-    #problem_list = ['HS44']
+    #dust_param.max_iter = 512
     #dust_param.MIN_delta = 1000
     for problem_name in problem_list[:]:
+        dust_param = DustParam()
         if problem_name in ["HS105", "HS80"]:
             dust_param.MIN_delta = 1e-4
         if problem_name in ["HS69", "HS68"]:
@@ -186,7 +186,6 @@ if __name__ == '__main__':
     log_dir = './logs/logs_0'
     result_dir = './results/results_64'
     # all_tests(sif_dir_root, log_dir, result_dir)
-    dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
 
     total_cnt = len(success_list) + len(fail_list)

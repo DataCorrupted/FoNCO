@@ -26,7 +26,7 @@ class DustParam:
         self.rescale = True;
         self.SIGMA = 0.3;               # Trust region update.
         self.DELTA = 0.75;              # Trust region update.
-        self.MIN_delta = 1e-5;          # Min trust region.    
+        self.MIN_delta = 1e-3;          # Min trust region.    
         self.MAX_delta = 64;            # Max trust region.    
 
         # Take in user's request.
