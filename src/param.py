@@ -20,13 +20,13 @@ class DustParam:
         self.theta = 0.9;
         self.line_theta =  1e-4;
         self.omega_shrink = 0.7;
-        self.eps_opt = 1e-4;
-        self.eps_violation = 1e-4;
+        self.eps_opt = 1e-3;
+        self.eps_violation = 1e-3;
         self.sub_verbose = False;
         self.rescale = True;
         self.SIGMA = 0.3;               # Trust region update.
         self.DELTA = 0.75;              # Trust region update.
-        self.MIN_delta = 1e-5;          # Min trust region.    
+        self.MIN_delta = 1e-2;          # Min trust region.    
         self.MAX_delta = 64;            # Max trust region.    
 
         # Take in user's request.
@@ -47,3 +47,25 @@ class DustParam:
         if 'DELTA' in kwarg:            self.DELTA = kwarg['DELTA'];
         if 'MIN_delta' in kwarg:        self.MIN_delta = kwarg['MIN_delta'];
         if 'MAX_delta' in kwarg:        self.MAX_delta = kwarg['MAX_delta'];
+
+    def dump2Dict(self):
+        return {
+            "init_rho": self.init_rho,
+            "init_omega": self.init_omega,
+            "max_iter": self.max_iter,
+            "max_sub_iter": self.max_sub_iter,
+            "beta_opt": self.beta_opt,
+            "beta_fea": self.beta_fea,
+
+            "theta": self.theta,
+            "line_theta": self.line_theta,
+            "omega_shrink": self.omega_shrink,
+            "eps_opt": self.eps_opt,
+            "eps_violation": self.eps_violation,
+            "sub_verbose": self.sub_verbose,
+            "rescale": self.rescale,
+            "SIGMA": self.SIGMA,
+            "DELTA": self.DELTA,
+            "MIN_delta": self.MIN_delta,
+            "MAX_delta": self.MAX_delta
+        }

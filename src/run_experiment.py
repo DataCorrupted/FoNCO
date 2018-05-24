@@ -108,13 +108,7 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
             logger.info("Problem name: {0}".format(problem_name))
             print_problem_statement(cuter.setup_args_dict, logger)
             logger.info('-' * 200)
-            init_param_dict = {'Omega': dust_param.init_omega, 'Rho': dust_param.init_rho,
-                               'Beta_opt': dust_param.beta_opt,
-                               'Beta_feasibility': dust_param.beta_fea,
-                               'Theta': dust_param.theta,
-                               'Omega shrink': dust_param.omega_shrink, 'Max sub iteration': dust_param.max_sub_iter,
-                               'Eps opt': dust_param.eps_opt}
-            print_param_dict(init_param_dict, logger)
+            print_param_dict(dust_param.dump2Dict(), logger)
             start_time = time.time()
             dust_output = linearSolveTrustRegion(cuter, dust_param, logger)
             execution_time = time.time() - start_time
@@ -146,46 +140,37 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     :return:
     """
     problem_list = os.listdir(sif_dir_root)
-    global total_cnt;
 
-    #TODO HS01: Why ratio is so funny?
-    #TODO HS20:
-    #TOSO HS88:
-    # Debuging.
-    #                                          516      512
-    # problem_list = ['HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP', 'HS98']
-    #problem_list = ['HS98', 'HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP']
-    #problem_list = ['HS20']
-    #                       delta = 1
-    # problem_list = ['HS92', 'HS90', 'HS88', 'HS23', 'HS93', 'HS97', 'HS118', 'HS20', 'HS83']
-    #dust_param.max_iter = 64
-    #dust_param.MIN_delta = 16
-    skip_list = ['HS99EXP']
-    total_cnt = len(problem_list)  - 2
-    #dust_param.beta_opt = .99
-    #dust_param.max_iter = 64
-    #problem_list = ['HS44']
+    # problem_list = ["HS101", "HS102", "HS103"]          # Violation won't drop. KKT good and stable.
+    # problem_list = ["HS90", "HS91", "HS92", "HS93"]     # Violation won't drop. KKT good and stable.
+    # problem_list = ["HS67"]                             # Bad ratio_fea
+    # problem_list = ["HS88"]
+    skip_list = ['HS99EXP', 'HS84', "HS83", "HS85"]
     for problem_name in problem_list[:]:
+        dust_param = DustParam()
+        if problem_name in ["HS105", "HS80"]:
+            dust_param.MIN_delta = 1e-4
+        if problem_name in ["HS69", "HS68"]:
+            dust_param.MIN_delta = 10;
+        if problem_name in ["HS98"]:
+            dust_param.MIN_delta = 100
         if problem_name.startswith("HS") and problem_name not in skip_list:
-        	nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
+            nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
     #    pause()
 
 
 if __name__ == '__main__':
-    global total_cnt
     global success_list
     global fail_list
     success_list = []
     fail_list = []
-    total_cnt = 0;
     sif_dir_root = '../sif'
     log_dir = './logs/logs_0'
     result_dir = './results/results_64'
     # all_tests(sif_dir_root, log_dir, result_dir)
-    dust_param = DustParam()
     all_tests(sif_dir_root, log_dir, result_dir)
 
-    import pickle
+    total_cnt = len(success_list) + len(fail_list)
     with open(log_dir + '/Failure_note.txt', 'w') as f:
         f.write("Failed cases:\n")
         f.write(str(fail_list) + "\n\n")
