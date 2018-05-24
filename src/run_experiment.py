@@ -146,10 +146,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     :return:
     """
     problem_list = os.listdir(sif_dir_root)
-    global total_cnt;
 
-    #TODO HS01: Why ratio is so funny?
-    #TODO HS20:
     #TOSO HS88:
     # Debuging.
     #                                          516      512
