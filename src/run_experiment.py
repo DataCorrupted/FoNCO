@@ -148,18 +148,13 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     """
     problem_list = os.listdir(sif_dir_root)
 
-    #TOSO HS88:
-    # Debuging.
-    #                                          516      512
-    # problem_list = ['HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP', 'HS98']
-    #problem_list = ['HS98', 'HS68', 'HS103', 'HS101', 'HS112', 'HS75', 'HS111', 'HS111LNP']
-    #problem_list = ['HS109']
-    #                       delta = 1
-    #problem_list = ['HS118', 'HS20', 'HS88', 'HS23', 'HS93', 'HS97', 'HS92', 'HS90', 'HS83']
-    #problem_list = ['HS88', 'HS70', 'HS107', 'HS67', 'HS92', 'HS103', 'HS93', 'HS90', 'HS91', 'HS85', 'HS101', 'HS56', 'HS75', 'HS102', 'HS89', 'HS83', 'HS106', 'HS25', 'HS109']
+    # problem_list = ["HS101", "HS102", "HS103"]          # Violation won't drop. KKT good and stable.
+    # problem_list = ["HS90", "HS91", "HS92", "HS93"]     # Violation won't drop. KKT good and stable.
+    # problem_list = ["HS67"]                             # Bad ratio_fea
+    problem_list = ["HS88"]
     skip_list = ['HS99EXP', 'HS84', "HS83", "HS85"]
     for problem_name in problem_list[:]:
-        dust_param = DustParam()
+        dust_param = DustParam(max_iter = 64)
         if problem_name in ["HS105", "HS80"]:
             dust_param.MIN_delta = 1e-4
         if problem_name in ["HS69", "HS68"]:
