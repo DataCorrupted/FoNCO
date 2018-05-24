@@ -4,7 +4,6 @@ from cuter_util import *
 from solver_util import makeA, makeB, makeC, makeBasis
 from simplex import Simplex
 from debug_utils import pause
-import numpy.linalg
 
 STEP_SIZE_MIN = 1e-10
 
@@ -39,7 +38,7 @@ def get_phi(x, rho, cuter, rescale):
 def get_delta_phi(x0, x1, rho, cuter, rescale, delta):
     """
     Evaluate delta merit function phi(x0, rho) - phi(x1, rho)
-    """
+	"""
     return get_phi(x0, rho, cuter, rescale) - get_phi(x1, rho, cuter, rescale)
 
 def linearModelPenalty(A, b, g, rho, d, adjusted_equatn):
@@ -307,17 +306,13 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         if ratio_opt > 0:
             step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
                                           dust_param.rescale)
-            fn_eval_cnt -= np.log2(step_size)
-            if step_size != 1:
-                _, _, b_star, _, _ = get_f_g_A_b_violation(x_k+d_k, cuter, dust_param)
-                d_k_star = -np.linalg.pinv(A).dot(b_star)
-                d_k += d_k_star
-                step_size = line_search_merit(x_k, d_k, rho, delta_linearized_model, dust_param.line_theta, cuter,
-                                              dust_param.rescale)
-                fn_eval_cnt -= np.log2(step_size)
             x_k += d_k * step_size
-        fn_eval_cnt += 1;
-        
+            fn_eval_cnt += 1 - np.log2(step_size)
+        else:
+            fn_eval_cnt += 1
+
+
+
         # PSST
         if delta_linearized_model_0 > 0 and \
                 delta_linearized_model + omega < beta_l * (delta_linearized_model_0 + omega):
@@ -326,9 +321,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
 
         f, g, b, A, violation = get_f_g_A_b_violation(x_k, cuter, dust_param)
         kkt_error_k = get_KKT(A, b, g, dual_var, rho) / init_kkt
-        if np.isnan(kkt_error_k):
-            status = -1;
-            break;
 
         omega *= dust_param.omega_shrink
 
