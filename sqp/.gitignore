@@ -1,3 +1,9 @@
+.idea
+*.iml
 *.pyc
-logs/*
-results/*
+results
+logs
+*.tex
+*.csv
+*.pdf
+summary
