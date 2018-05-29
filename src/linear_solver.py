@@ -92,12 +92,6 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
     up = l_0 - primal_obj
     down = (l_0 - dual_obj)
     down += 1e-5
-    if False:
-        print g * rho
-        print l_0, primal_obj, dual_obj
-
-        print primal_var
-        print makeC(g*rho, equatn);
 
     return up/down
 def l0(b, equatn, omega):
@@ -257,7 +251,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
         [dust_param.init_rho], [1], [violation], [f], []
 
-    delta = 1; 
+    delta = dust_param.init_delta; 
     step_size = 1;
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
@@ -280,10 +274,20 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
         
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+
         if i == 0:
-            init_kkt = kkt_error_k
+            # The problem automatically satisfies.
+            if kkt_error_k < 1e-5:
+                status = 1
+                break;
+            # In case the init kkt is too small, then as long as we reach the minum we are happy.
+            elif kkt_error_k < 1e-5 / dust_param.eps_opt:
+                init_kkt = 1
+            else:
+                init_kkt = kkt_error_k
         else:
             kkt_error_k /= init_kkt
+
 
         # TODO
         # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)
@@ -342,7 +346,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         i += 1
         if (np.linalg.norm(d_k, 2) < 1e-10):
             rho *= dust_param.theta
-
     logger.info('-' * 200)
 
     if rescale:

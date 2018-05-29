@@ -29,7 +29,24 @@ class DustParam:
         self.eps_violation = eps_violation
         self.sub_verbose = sub_verbose
         self.rescale = rescale
-
+    def dump2Dict(self):
+        return {
+            'init_rho': self.init_rho,
+            'init_omega': self.init_omega,
+            'max_iter': self.max_iter,
+            'max_iter': self.max_iter,
+            'max_sub_iter': self.max_sub_iter,
+            'beta_opt': self.beta_opt,
+            'beta_fea': self.beta_fea,
+            'theta': self.theta,
+            'line_theta': self.line_theta,
+            'omega_shrink': self.omega_shrink,
+            'add_on_hess': self.add_on_hess,
+            'eps_opt': self.eps_opt,
+            'eps_violation': self.eps_violation,
+            'sub_verbose': self.sub_verbose,
+            'rescale': self.rescale
+        }
 
 def v_x(c, adjusted_equatn):
     """

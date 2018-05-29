@@ -8,7 +8,7 @@ class DustParam:
         # Setup default ones.
         # I didn't use default value so that I can see clearer.
 
-        #TODO add omega to l0
+        self.init_delta = 1;
         self.init_rho = 1;
         self.init_omega = 1e-2;
         self.max_iter = 512;
@@ -32,6 +32,8 @@ class DustParam:
         # Take in user's request.
         if 'init_rho' in kwarg:         self.init_rho = kwarg['init_rho'];
         if 'init_omega' in kwarg:       self.init_omega = kwarg['init_omega'];
+        if 'init_delta' in kwarg:       self.init_delta = kwarg['init_delta']
+
         if 'max_iter' in kwarg:         self.max_iter = kwarg['max_iter'];
         if 'max_sub_iter' in kwarg:     self.max_sub_iter = kwarg['max_sub_iter'];
         if 'beta_opt' in kwarg:         self.beta_opt = kwarg['beta_opt'];
@@ -52,6 +54,8 @@ class DustParam:
         return {
             "init_rho": self.init_rho,
             "init_omega": self.init_omega,
+            "init_delta": self.init_delta,
+            
             "max_iter": self.max_iter,
             "max_sub_iter": self.max_sub_iter,
             "beta_opt": self.beta_opt,
