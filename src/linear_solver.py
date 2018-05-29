@@ -257,7 +257,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     all_rhos, all_kkt_erros, all_violations, all_fs, all_sub_iter = \
         [dust_param.init_rho], [1], [violation], [f], []
 
-    delta = 1; 
+    delta = dust_param.init_delta; 
     step_size = 1;
     logger.info(
         '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \

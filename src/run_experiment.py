@@ -144,16 +144,18 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     # problem_list = ["HS101", "HS102", "HS103"]          # Violation won't drop. KKT good and stable.
     # problem_list = ["HS90", "HS91", "HS92", "HS93"]     # Violation won't drop. KKT good and stable.
     # problem_list = ["HS67"]                             # Bad ratio_fea
-    # problem_list = ["HS88"]
-    #problem_list = ["HS25"]
-    skip_list = ['HS99EXP', 'HS84', "HS83", "HS85"]
-    for problem_name in problem_list[:]:
-        dust_param = DustParam(max_iter = 512)
-        if problem_name in ["HS105", "HS80"]:
+    # problem_list = ["HS67"]
+
+    skip_list = []
+    for problem_name in sorted(problem_list[:]):
+        dust_param = DustParam()
+        if problem_name in ["HS56"]:
+            dust_param.init_delta = dust_param.MIN_delta
+        elif problem_name in ["HS105", "HS80"]:
             dust_param.MIN_delta = 1e-4
-        if problem_name in ["HS69", "HS68"]:
+        elif problem_name in ["HS69", "HS68"]:
             dust_param.MIN_delta = 10;
-        if problem_name in ["HS98"]:
+        elif problem_name in ["HS98"]:
             dust_param.MIN_delta = 100
         if problem_name.startswith("HS") and problem_name not in skip_list:
             nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
@@ -172,8 +174,7 @@ if __name__ == '__main__':
     all_tests(sif_dir_root, log_dir, result_dir)
 
     success_list = sorted(success_list)
-    fail_list = sorted(fail_list
-        )
+    fail_list = sorted(fail_list)
     total_cnt = len(success_list) + len(fail_list)
     with open(log_dir + '/Failure_note.txt', 'w') as f:
         f.write("Failed cases:\n")

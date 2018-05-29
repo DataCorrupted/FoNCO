@@ -8,7 +8,7 @@ class DustParam:
         # Setup default ones.
         # I didn't use default value so that I can see clearer.
 
-        #TODO add omega to l0
+        self.init_delta = 1;
         self.init_rho = 1;
         self.init_omega = 1e-2;
         self.max_iter = 512;
