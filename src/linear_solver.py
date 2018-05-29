@@ -346,7 +346,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         i += 1
         if (np.linalg.norm(d_k, 2) < 1e-10):
             rho *= dust_param.theta
-
     logger.info('-' * 200)
 
     if rescale:

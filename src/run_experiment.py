@@ -146,7 +146,10 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     skip_list = ["HS99EXP"]
     for problem_name in sorted(problem_list[:]):
         dust_param = DustParam()
-        if problem_name in ["HS56"]:
+        if problem_name in ['HS88', 'HS89', 'HS90', 'HS91', 'HS92', 'HS93']:
+            dust_param.init_delta = 1e-4
+            dust_param.init_rho = 1e-4
+        elif problem_name in ["HS56"]:
             dust_param.init_delta = dust_param.MIN_delta
         elif problem_name in ["HS105", "HS80"]:
             dust_param.MIN_delta = 1e-4
