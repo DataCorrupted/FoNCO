@@ -92,12 +92,6 @@ def getRatio(A, b, g, rho, primal_var, dual_var, delta, equatn, l_0):
     up = l_0 - primal_obj
     down = (l_0 - dual_obj)
     down += 1e-5
-    if False:
-        print g * rho
-        print l_0, primal_obj, dual_obj
-
-        print primal_var
-        print makeC(g*rho, equatn);
 
     return up/down
 def l0(b, equatn, omega):
@@ -280,10 +274,20 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         delta_linearized_model_0 = l_0_0_x_k - l_d_0_x_k
         
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
+
         if i == 0:
-            init_kkt = kkt_error_k
+            # The problem automatically satisfies.
+            if kkt_error_k < 1e-5:
+                status = 1
+                break;
+            # In case the init kkt is too small, then as long as we reach the minum we are happy.
+            elif kkt_error_k < 1e-5 / dust_param.eps_opt:
+                init_kkt = 1
+            else:
+                init_kkt = kkt_error_k
         else:
             kkt_error_k /= init_kkt
+
 
         # TODO
         # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)

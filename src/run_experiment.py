@@ -143,10 +143,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
 
     # problem_list = ["HS101", "HS102", "HS103"]          # Violation won't drop. KKT good and stable.
     # problem_list = ["HS90", "HS91", "HS92", "HS93"]     # Violation won't drop. KKT good and stable.
-    # problem_list = ["HS67"]                             # Bad ratio_fea
-    # problem_list = ["HS67"]
-
-    skip_list = []
+    skip_list = ["HS99EXP"]
     for problem_name in sorted(problem_list[:]):
         dust_param = DustParam()
         if problem_name in ["HS56"]:
@@ -159,7 +156,6 @@ def all_tests(sif_dir_root, log_dir, result_dir):
             dust_param.MIN_delta = 100
         if problem_name.startswith("HS") and problem_name not in skip_list:
             nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir)
-    #    pause()
 
 
 if __name__ == '__main__':
