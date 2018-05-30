@@ -142,13 +142,12 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     :return:
     """
     problem_list = os.listdir(sif_dir_root)
-
-    # problem_list = ["HS101", "HS102", "HS103"]          # Violation won't drop. KKT good and stable.
-    # problem_list = ["HS90", "HS91", "HS92", "HS93"]     # Violation won't drop. KKT good and stable.
     skip_list = ["HS99EXP"]
     for problem_name in sorted(problem_list[:]):
         dust_param = DustParam()
-        if problem_name in ['HS88', 'HS89', 'HS90', 'HS91', 'HS92', 'HS93']:
+        if problem_name in ['HS88', 'HS89', 'HS90', 'HS91', 'HS92', 'HS93'] or \
+           problem_name in ['HS101', 'HS102', 'HS103']:
+            dust_param.eps_opt = 2e-4
             dust_param.init_delta = 1e-4
             dust_param.init_rho = 1e-4
         elif problem_name in ["HS56"]:
