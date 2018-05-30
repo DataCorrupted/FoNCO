@@ -263,11 +263,12 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         # DUST / PSST / Subproblem here.
         d_k, dual_var, rho, ratio_complementary, ratio_opt, ratio_fea, sub_iter = \
             getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega)
-        #pause(x_k, d_k)
+
         # 2.3
         l_0_rho_x_k = linearModelPenalty(A, b, g, rho, zero_d, adjusted_equatn)
         l_d_rho_x_k = linearModelPenalty(A, b, g, rho, d_k, adjusted_equatn)
         delta_linearized_model = l_0_rho_x_k - l_d_rho_x_k
+
         # 2.2
         l_0_0_x_k = linearModelPenalty(A, b, g, 0, zero_d, adjusted_equatn)
         l_d_0_x_k = linearModelPenalty(A, b, g, 0, d_k, adjusted_equatn)
@@ -275,17 +276,14 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
+        # Relative KKT
         if i == 0:
             init_kkt = max(kkt_error_k, 1)
+            if kkt_error_k < dust_param.eps_opt and violation < dust_param.eps_violation:
+                status = 1
+                break
         else:
             kkt_error_k /= init_kkt
-
-
-        # TODO
-        # delta = s(k-1)^T y(k-1) / y(k-1)^Ty(k-1)
-        # s(k-1) = x(k) - x(k-1), y(k-1) = g(k) - g(k-1)
-        # This feature is in branch "delta"
-        # But it seems it's not working
 
         # Update delta.
         if ratio_opt > 0:
@@ -306,8 +304,6 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             fn_eval_cnt += 1 - np.log2(step_size)
         else:
             fn_eval_cnt += 1
-
-
 
         # PSST
         if delta_linearized_model_0 > 0 and \
