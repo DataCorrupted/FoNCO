@@ -118,7 +118,9 @@ def nlp_test(sif_dir_root, problem_name, dust_param, log_dir, result_dir):
                 [('Summary for problem', dust_output['problem_name']),
                  ('Status', dust_output['status']), ('Iteration Number', dust_output['iter_num']),
                  ('Final objective', dust_output['obj_f']), ('KKT error', dust_output['kkt_error']),
-                 ('Constraint violation', dust_output['constraint_violation']), ('Execute Time (s)', execution_time)])
+                 ('Constraint violation', dust_output['constraint_violation']), 
+                 ('Execute Time (s)', execution_time),
+                 ('Pivot#', dust_output['pivot_cnt'])])
             print_param_dict(output_print_dict, logger)
             save_output(result_dir, dust_output)
             if dust_output['status'] == 1:

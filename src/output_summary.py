@@ -50,15 +50,7 @@ def printToLatex(df, path = './summary/summary_table.tex'):
 \\usepackage{longtable}
 
 \\usepackage{booktabs} % To thicken table lines
-
-
-\\headheight 8pt \\headsep 20pt \\footskip 30pt
-\\textheight 9in \\textwidth 6.5in
-\\oddsidemargin 0in \\evensidemargin 0in
-\\topmargin -.35in
-
-\\newcommand {\\pts}[1]{({\\bf #1 pts})}
-\\lstset{basicstyle=\\small\\ttfamily,breaklines=true}
+\\usepackage[margin=0.25in]{geometry}
 
 \\begin{document}
 \\begin{center}
@@ -77,7 +69,7 @@ def get_summary(all_output):
     """
 
     summary_keys = ['status', 'obj_f', 'kkt_error', 'iter_num', 'constraint_violation', 'rhos', 'fn_eval_cnt',
-                    'problem_name', 'execution_time']
+                    'problem_name', 'pivot_cnt', 'execution_time']
 
     summary_list = []
     rho_list = []
@@ -92,9 +84,9 @@ def get_summary(all_output):
 
     name_map = {'status': 'Status', 'obj_f': '$f(x)$', 'kkt_error': 'KKT Error', 'iter_num': 'Iter #',
                 'constraint_violation': 'Violation', 'rhos': 'Rho', 'fn_eval_cnt': '$f(x)$ #',
-                'problem_name': 'Problem', 'execution_time': "Time Used"}
+                'problem_name': 'Problem', 'pivot_cnt':'Pivot #','execution_time': "Time Used"}
 
-    cols = ['Problem', 'Iter #', '$f(x)$ #', '$f(x)$', 'Violation', 'KKT Error', 'Rho', "Time Used"]
+    cols = ['Problem', 'Iter #', 'Pivot #', '$f(x)$ #', '$f(x)$', 'Violation', 'KKT Error', 'Rho', "Time Used"]
     # cols = ['Problem', 'Iter #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
     summary_df.rename(columns=name_map, inplace=True)
 

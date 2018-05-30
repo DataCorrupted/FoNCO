@@ -258,6 +258,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
             .format(i, 1, delta, violation, rho, f, -1, -1, -1, step_size, -1, -1, rho * f + violation, -1))
     
     fn_eval_cnt = 0
+    pivot_cnt = 0
     while i < max_iter:
 
         # DUST / PSST / Subproblem here.
@@ -323,6 +324,8 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         all_kkt_erros.append(kkt_error_k)
         all_sub_iter.append(sub_iter)
 
+        pivot_cnt += sub_iter
+
         logger.info(
             '''{0:4d} |  {1:+.5e} | {2:+.5e} | {3:+.5e} | {4:+.5e} | {5:+.5e} | {6:+.5e} | {7:+.5e} | {8:+.5e} | {9:+.5e} | {10:6d} | {11:+.5e} | {12:+.5e} | {13:+.5e}''' \
                 .format(i, kkt_error_k, delta, violation, rho, f, ratio_complementary, ratio_fea, ratio_opt, step_size,
@@ -342,4 +345,4 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
     return {'x': x_k, 'dual_var': dual_var, 'rho': rho, 'status': status, 'obj_f': f, 'x0': setup_args_dict['x'],
             'kkt_error': kkt_error_k, 'iter_num': i, 'constraint_violation': violation, 'rhos': all_rhos,
             'violations': all_violations, 'fs': all_fs, 'subiters': all_sub_iter, 'kkt_erros': all_kkt_erros,
-            'fn_eval_cnt': fn_eval_cnt, 'num_var': num_var, 'num_constr': dual_var.shape[0]}
+            'fn_eval_cnt': fn_eval_cnt, 'num_var': num_var, 'num_constr': dual_var.shape[0], 'pivot_cnt': pivot_cnt}
