@@ -276,15 +276,7 @@ def linearSolveTrustRegion(cuter, dust_param, logger):
         kkt_error_k = get_KKT(A, b, g, dual_var, rho)
 
         if i == 0:
-            # The problem automatically satisfies.
-            if kkt_error_k < 1e-5:
-                status = 1
-                break;
-            # In case the init kkt is too small, then as long as we reach the minum we are happy.
-            elif kkt_error_k < 1e-5 / dust_param.eps_opt:
-                init_kkt = 1
-            else:
-                init_kkt = kkt_error_k
+            init_kkt = max(kkt_error_k, 1)
         else:
             kkt_error_k /= init_kkt
 
