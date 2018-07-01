@@ -32,4 +32,14 @@ It will compile the interface along with the .f file in each and every problem i
 
 ### src
 
-All the codes should be here.
+All the codes should be here. Run:
+
+	python run_experiment.py
+
+to start an experiment.
+
+Use
+
+	python output_summary.py
+
+you can generate a latex file containing a table of all the results of the problems you just tested.
