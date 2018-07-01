@@ -69,7 +69,7 @@ def get_summary(all_output):
     """
 
     summary_keys = ['status', 'obj_f', 'kkt_error', 'iter_num', 'constraint_violation', 'rhos', 'fn_eval_cnt',
-                    'problem_name', 'pivot_cnt', 'execution_time']
+                    'problem_name', 'pivot_cnt']
 
     summary_list = []
     rho_list = []
@@ -84,9 +84,9 @@ def get_summary(all_output):
 
     name_map = {'status': 'Status', 'obj_f': '$f(x)$', 'kkt_error': 'KKT Error', 'iter_num': 'Iter #',
                 'constraint_violation': 'Violation', 'rhos': 'Rho', 'fn_eval_cnt': '$f(x)$ #',
-                'problem_name': 'Problem', 'pivot_cnt':'Pivot #','execution_time': "Time Used"}
+                'problem_name': 'Problem', 'pivot_cnt':'Pivot #'}
 
-    cols = ['Problem', 'Iter #', 'Pivot #', '$f(x)$ #', '$f(x)$', 'Violation', 'KKT Error', 'Rho', "Time Used"]
+    cols = ['Problem', 'Iter #', 'Pivot #', '$f(x)$ #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
     # cols = ['Problem', 'Iter #', '$f(x)$', 'Violation', 'KKT Error', 'Rho']
     summary_df.rename(columns=name_map, inplace=True)
 

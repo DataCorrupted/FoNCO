@@ -142,7 +142,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     :return:
     """
     problem_list = os.listdir(sif_dir_root)
-    skip_list = ["HS99EXP"]
+    skip_list = []
     for problem_name in sorted(problem_list[:]):
         dust_param = DustParam()
         if problem_name in ['HS88', 'HS89', 'HS90', 'HS91', 'HS92', 'HS93'] or \
