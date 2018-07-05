@@ -20,7 +20,7 @@ class DustParam:
         self.theta = 0.9;
         self.line_theta =  1e-4;
         self.omega_shrink = 0.7;
-        self.eps_opt = 1e-3;
+        self.eps_opt = 1e-4;
         self.eps_violation = 1e-3;
         self.sub_verbose = False;
         self.rescale = True;
