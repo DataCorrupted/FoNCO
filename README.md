@@ -6,6 +6,21 @@ An inexact penalty sequential linear optimization for large-scale problems.
 
 This work depends on CUTEst, please refer to [here](https://github.com/ralna/CUTEst/wiki) for installation details.
 
+_scipy_ is required before this code can work. For Ubuntu users, please refer to the command below:
+
+	sudo apt-get install python-pip
+	pip install scipy
+
+(Optional) To use result summary tools we provided, please install _panda_ too.
+
+	pip install panda
+
+(Optional) To see the generated summary, you need latex installed.
+
+	sudo apt-get install texlive-full
+
+This package is generally large(2G+), you can choose some packages to install instead of all of them.
+
 ## Folders & Usage
 
 ### sif
@@ -40,10 +55,20 @@ All the codes should be here. Run:
 
 	python run_experiment.py
 
-to start an experiment.
+to start an experiment. Human readable results and running logs will be put in _log/_, results for each problem will be put in _result/_.
 
-Use
+(Optional) Use
 
 	python output_summary.py
 
-you can generate a latex file containing a table of all the results of the problems you just tested.
+you can generate a latex file containing a table of all the results of the problems you just tested. A latex longtable of all the results will be generated in _summary/summary.tex_
+
+(Optional) Use
+
+	python get_time.py
+
+A latex longtable of all problems time consumption and status will be generated in _summary/time.tex_
+
+### summary
+
+Just a folder to put a latex codes for generated summary.
