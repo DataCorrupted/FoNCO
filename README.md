@@ -2,6 +2,10 @@
 
 An inexact penalty sequential linear optimization for large-scale problems.
 
+## Dependencied
+
+This work depends on CUTEst, please refer to [here](https://github.com/ralna/CUTEst/wiki) for installation details.
+
 ## Folders & Usage
 
 ### sif
