@@ -2,7 +2,7 @@
 
 An inexact penalty sequential linear optimization for large-scale problems.
 
-## Dependencied
+## Dependencies
 
 This work depends on CUTEst, please refer to [here](https://github.com/ralna/CUTEst/wiki) for installation details.
 
@@ -19,7 +19,7 @@ _scipy_ is required before this code can work. For Ubuntu users, please refer to
 
 	sudo apt-get install texlive-full
 
-This package is generally large(2G+), you can choose some packages to install instead of all of them.
+This package is generally large(2G+), you can choose some sub-packages to install instead of all of them.
 
 ## Folders & Usage
 
@@ -35,7 +35,7 @@ It will call _sifdecoder_ and turn all your .sif file into a folder with decoded
 
 ### cutest_py
 
-A python-cutest interface written by Jianshan Wang. Some files are missing, please make sure that you have cutest installed and then run:
+A python-CUTEst interface written by Jianshan Wang. Some files are missing, please make sure that you have CUTEst installed and then run:
 
 	./collect_files.sh
 
