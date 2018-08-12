@@ -1,6 +1,6 @@
-# Sequential Linear Optimization
+# FoNCO
 
-An inexact penalty sequential linear optimization for large-scale problems.
+First-order methods for constrained optimization(FoNCO)
 
 ## Dependencies
 
@@ -72,3 +72,14 @@ A latex longtable of all problems time consumption and status will be generated 
 ### summary
 
 Just a folder to put a latex codes for generated summary.
+
+## Results & External links
+
+We have reached 113/126 accuracy on all HS problems in seconds. 
+
+For more details you can refer to(The links are pointing to our Repos in Github.com for now, we will change this link once it is published):
+
+[Our paper](https://github.com/DataCorrupted/slpls)
+
+[Presentation](https://github.com/DataCorrupted/mopta2018)
+
