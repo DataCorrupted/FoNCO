@@ -152,9 +152,7 @@ def all_tests(sif_dir_root, log_dir, result_dir):
             dust_param.init_rho = 1e-4
         elif problem_name in ["HS100", "HS100MOD"]:
             dust_param.init_rho = 10
-        elif problem_name in ["HS56"]:
-            dust_param.init_delta = dust_param.MIN_delta
-        elif problem_name in ["HS80", "HS105"]:
+        elif problem_name in ["HS105"]:
             dust_param.MIN_delta = 1
             dust_param.init_delta = 10
         elif problem_name in ["HS68"]:
