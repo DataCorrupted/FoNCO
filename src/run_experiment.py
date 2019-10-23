@@ -145,7 +145,9 @@ def all_tests(sif_dir_root, log_dir, result_dir):
     skip_list = []
     for problem_name in sorted(problem_list[:]):
         dust_param = DustParam()
-        if problem_name in ['HS87', 'HS88', 'HS89', 'HS90', 'HS91', 'HS92', 'HS93'] or \
+        if False: 
+            pass
+        elif problem_name in ['HS87', 'HS88', 'HS89', 'HS90', 'HS91', 'HS92', 'HS93'] or \
            problem_name in ['HS101', 'HS102', 'HS103', 'HS13', 'HS3', 'HS56', 'HS95', 'HS96']:
             dust_param.eps_opt = 2e-4
             dust_param.init_delta = 1e-4
