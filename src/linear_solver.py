@@ -138,6 +138,8 @@ def getLinearSearchDirection(A, b, g, rho, delta, cuter, dust_param, omega):
         # but we are only interested with the first m.
         dual = -linsov.getDualVar()
         dual_var = dual[0, 0:m]
+        # Truncation in-equality constraint to [0, 1], equality constraint to [-1, 1]
+        dual_var = np.maximum(np.minimum(dual_var, np.ones([m])), -1 * equatn)
         nu_var = -linsov.getNuVar(makeC(g*0, equatn))
 
         # Update ratios.
