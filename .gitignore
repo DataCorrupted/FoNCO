@@ -12,3 +12,4 @@ src/summary/
 src/logs/
 !src/logs/README.md
 sif_all/
+temp
