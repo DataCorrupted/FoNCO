@@ -11,7 +11,7 @@ def pause(*args, **kwargs):
 	for item in args:
 		print(item)
 	for (key, item) in kwargs.items():
-		print(key + ":\n", item)
+		print(key, item)
 	# Press Enter to continue.
 	# The main code is using py2 while my util uses py3,
 	# really frustring

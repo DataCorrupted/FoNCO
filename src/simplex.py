@@ -14,6 +14,8 @@ class Simplex:
     #           will be reset to np.arange(m-n, m), as the correct solution 
     #           usally falls there. We DO NOT check if that matrix is invertable.
     def __init__(self, c, A, b, basis = None, iter_max = 100):
+        self.name = "Simplex"
+        self.intro = "Naive simplex with no information in the table and everything(primal, dual, z-c) is calculated \"on-the-fly\""
         self.iter_max_ = iter_max
         self.inputCheck_(c, A, b, basis)
         m, n = A.shape
@@ -149,6 +151,8 @@ class Simplex:
         b_inv = np.linalg.inv(self.tableau_[:, self.basis_])
         primal_var[self.basis_] = b_inv.dot(self.tableau_[:, self.n_])
         return primal_var
+    def getMainTable_(self):
+        return self.tableau_
 
 if __name__ == "__main__":
 
